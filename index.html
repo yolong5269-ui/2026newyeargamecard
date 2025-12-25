@@ -1,213 +1,1160 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Wabi Flow — Quiet Run</title>
-
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#2f8f4a" />
+<title>馬年球道衝刺｜Green Run</title>
 <style>
-html, body {
-  margin: 0;
-  padding: 0;
-  background: #F5F3EE;
-  font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif;
-  color: #1F1F1F;
-  height: 100%;
-  overflow: hidden;
-}
+  :root{
+    --bg:#eaf5ee;
+    --panel: rgba(255,255,255,.72);
+    --panel2: rgba(255,255,255,.88);
+    --ink:#11311c;
+    --muted: rgba(17,49,28,.65);
+    --line: rgba(17,49,28,.14);
+    --accent:#2f8f4a;
+    --accent2:#f24a5a;
+    --gold:#c7a13a;
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ height:100%; margin:0; background:var(--bg); font-family: ui-sans-serif, system-ui, -apple-system, "PingFang TC","Noto Sans TC", Arial; color:var(--ink); overflow:hidden; }
+  #app{ height:100%; display:grid; grid-template-rows:auto 1fr auto; padding: calc(10px + var(--safe-top)) 10px calc(10px + var(--safe-bottom)); gap:10px; max-width: 720px; margin: 0 auto; }
+  header, footer{
+    background: linear-gradient(180deg, var(--panel2), var(--panel));
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 10px 12px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    backdrop-filter: blur(10px);
+  }
+  header .title{ font-weight: 800; letter-spacing:.2px; display:flex; align-items:center; gap:8px; }
+  header .sub{ font-size:12px; color: var(--muted); margin-top:2px; }
+  .hud{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+  .pill{
+    background: rgba(255,255,255,.68);
+    border:1px solid var(--line);
+    border-radius: 999px;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: var(--muted);
+    display:flex; gap:6px; align-items:baseline;
+    min-width: 92px;
+    justify-content: space-between;
+  }
+  .pill b{ color: var(--ink); font-weight: 850; }
+  main{
+    position:relative;
+    border-radius: 18px;
+    overflow:hidden;
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,.08));
+  }
+  canvas{ width:100%; height:100%; display:block; }
+  .overlay{
+    position:absolute; inset:0;
+    display:flex; align-items:flex-end; justify-content:center;
+    padding: 18px;
+    background: radial-gradient(900px 650px at 50% 30%, rgba(255,255,255,.92) 0%, rgba(234,245,238,.78) 48%, rgba(234,245,238,.58) 100%);
+  }
+  .card{
+    width:min(560px, 100%);
+    background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.74));
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 14px 14px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.08);
+  }
+  .card h1{ margin:0 0 8px; font-size:18px; letter-spacing:.2px; }
+  .card p{ margin:6px 0; color:var(--muted); font-size: 13px; line-height: 1.5; }
+  .row{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px; }
+  button{
+    cursor:pointer; user-select:none;
+    border-radius: 14px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    background: white;
+    color: var(--ink);
+    font-weight: 780;
+    letter-spacing:.2px;
+  }
+  button.primary{
+    background: linear-gradient(180deg, rgba(47,143,74,.98), rgba(47,143,74,.86));
+    color: white;
+    border-color: rgba(47,143,74,.28);
+  }
+  button.ghost{ background: transparent; }
+  button:active{ transform: translateY(1px); }
+  .hint{ font-size: 12px; color: var(--muted); line-height: 1.45; }
+  .hint code{ background: rgba(17,49,28,.06); border: 1px solid rgba(17,49,28,.10); padding: 1px 6px; border-radius: 999px; color: var(--ink); }
+  footer{ justify-content:space-between; }
+  .footerLeft{ display:flex; flex-direction:column; gap:4px; }
+  .footerBtns{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+  .toast{
+    position:absolute; left:50%; bottom: 14px;
+    transform: translateX(-50%);
+    background: rgba(17,49,28,.86);
+    color: rgba(255,255,255,.94);
+    border: 1px solid rgba(255,255,255,.22);
+    padding: 10px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    opacity:0; pointer-events:none;
+    transition: opacity .18s ease, transform .18s ease;
+    box-shadow: 0 18px 50px rgba(0,0,0,.18);
+  }
+  .toast.show{ opacity:1; transform: translateX(-50%) translateY(-4px); }
 
-#app {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
+  /* End screen inputs */
+  .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top: 10px; }
+  .stat{
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.68);
+    border-radius: 14px;
+    padding: 10px 12px;
+  }
+  .stat .k{ font-size: 12px; color: var(--muted); }
+  .stat .v{ font-size: 18px; font-weight: 860; margin-top: 2px; }
+  .field{ margin-top: 10px; }
+  .field label{ font-size: 12px; color: var(--muted); display:block; margin-bottom: 6px; }
+  input, textarea{
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.80);
+    padding: 10px 12px;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+  }
+  textarea{ resize:none; min-height: 46px; }
+  .chips{ display:flex; gap:8px; flex-wrap:wrap; margin-top: 8px; }
+  .chip{
+    border:1px solid var(--line);
+    background: rgba(255,255,255,.72);
+    border-radius: 999px;
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor:pointer;
+    user-select:none;
+  }
+  .chip:active{ transform: translateY(1px); }
+  .divider{
+    height: 1px;
+    background: rgba(17,49,28,.10);
+    margin: 12px 0 10px;
+  }
+  .cardFooterBlessing{
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(17,49,28,.18);
+    color: rgba(17,49,28,.90);
+    line-height: 1.55;
+  }
+  .cardFooterBlessing .company{ color: var(--muted); font-size: 12px; margin-top: 6px; }
 
-canvas {
-  display: block;
-}
-
-.overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(245,243,238,0.92);
-}
-
-.hidden {
-  display: none;
-}
-
-.title {
-  font-size: 20px;
-  margin-bottom: 12px;
-}
-
-.subtitle {
-  font-size: 14px;
-  color: #6F6F6F;
-  line-height: 1.6;
-}
-
-.score {
-  font-size: 28px;
-  margin-bottom: 16px;
-}
-
-input, button {
-  font-size: 14px;
-  padding: 10px;
-  margin-top: 8px;
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid #D8D5CE;
-  background: #F5F3EE;
-}
-
-button {
-  background: #1F1F1F;
-  color: #F5F3EE;
-  border: none;
-}
-
-.quick {
-  margin-top: 8px;
-  font-size: 13px;
-  color: #6F6F6F;
-}
-
-.quick span {
-  display: inline-block;
-  margin-top: 4px;
-  margin-right: 6px;
-  padding: 4px 8px;
-  border: 1px solid #D8D5CE;
-  cursor: pointer;
-}
+  @media (max-width: 420px){
+    header{ padding: 10px 10px; }
+    .pill{ min-width: 86px; padding: 7px 9px; }
+    .grid2{ grid-template-columns: 1fr; }
+  }
 </style>
 </head>
-
 <body>
 <div id="app">
-  <canvas id="game"></canvas>
+  <header>
+    <div>
+      <div class="title">⛳ 馬年球道衝刺 <span style="font-weight:700;color:var(--muted);font-size:12px;">60s</span></div>
+      <div class="sub">左右拖曳推球｜閃沙坑樹叢水池｜撿紅包、球旗加分</div>
+    </div>
+    <div class="hud">
+      <div class="pill">Distance <b id="uiDist">0</b><span>m</span></div>
+      <div class="pill">Score <b id="uiScore">0</b></div>
+      <div class="pill">Time <b id="uiTime">60.0</b><span>s</span></div>
+    </div>
+  </header>
 
-  <!-- 開場 -->
-  <div id="start" class="overlay">
-    <div class="title">Wabi Flow</div>
-    <div class="subtitle">靜靜向前，一路都有風</div>
-  </div>
+  <main>
+    <canvas id="c" aria-label="Golf runner canvas"></canvas>
+    <div class="toast" id="toast">已複製分享文字 ✅</div>
 
-  <!-- 結束 -->
-  <div id="end" class="overlay hidden">
-    <div class="score" id="finalScore"></div>
-
-    <input id="name" placeholder="暱稱" />
-    <input id="blessing" placeholder="祝福語（必填）" />
-
-    <div class="quick">
-      快捷祝福：
-      <span>慢慢跑，也會跑得遠</span>
-      <span>穩穩向前，好事發生</span>
-      <span>一路有風，心也很靜</span>
+    <!-- Start overlay -->
+    <div class="overlay" id="startOverlay">
+      <div class="card">
+        <h1>馬年開球，往前跑</h1>
+        <p>先看一段擊球開場（2 秒），接著你就要控制球在球道上衝刺 60 秒。<br>提示：<strong>連續吃到紅包</strong>會累積小加成；撞到障礙不會結束，但會很痛。</p>
+        <div class="row">
+          <button class="primary" id="btnStart">▶ 開始</button>
+          <button class="ghost" id="btnHow">操作提示</button>
+        </div>
+        <p class="hint">手感：偏靈敏（你選的 A）｜建議用拇指在畫面下半部拖曳。 </p>
+      </div>
     </div>
 
-    <button id="restart">再走一次</button>
-  </div>
+    <!-- End overlay -->
+    <div class="overlay" id="endOverlay" style="display:none;">
+      <div class="card">
+        <h1>完成 60 秒</h1>
+        <p style="margin-top:-2px;">把成績留下來（Firebase 版會把這段送上排行榜）</p>
+
+        <div class="grid2">
+          <div class="stat">
+            <div class="k">Final Score</div>
+            <div class="v" id="endScore">0</div>
+          </div>
+          <div class="stat">
+            <div class="k">Distance</div>
+            <div class="v"><span id="endDist">0</span> m</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>暱稱（8 字內）</label>
+          <input id="inpName" maxlength="8" placeholder="例如：阿凱">
+        </div>
+
+        <div class="field">
+          <label>祝福語（必填，18 字內）</label>
+          <textarea id="inpBless" maxlength="18" placeholder="例如：步伐不急，方向正確"></textarea>
+          <div class="chips" id="chipRow">
+            <div class="chip">慢慢跑，也會跑得遠</div>
+            <div class="chip">穩穩向前，好事發生</div>
+            <div class="chip">一路開球，一路順心</div>
+            <div class="chip">馬年順行，天天好球</div>
+            <div class="chip">步伐不急，方向正確</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="primary" id="btnRestart">↻ 再跑一次</button>
+          <button class="ghost" id="btnShare">📤 分享成績</button>
+        </div>
+
+        <div class="cardFooterBlessing">
+          <div>願您這一年<br>步伐不急，方向正確</div>
+          <div class="company">— 弘騏興業有限公司</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footerLeft">
+      <div class="hint">玩法：拖曳左右推球（無段式）｜鬆手會回正｜可按 <code>R</code> 重開</div>
+      <div class="hint">障礙：沙坑=減速｜樹叢=彈飛｜水池=大減速 + 連擊歸零</div>
+    </div>
+    <div class="footerBtns">
+      <button class="ghost" id="btnPause">⏸ 暫停</button>
+      <button class="ghost" id="btnReset">🧹 重置</button>
+    </div>
+  </footer>
 </div>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+(() => {
+  // ========= Config =========
+  const CFG = {
+    duration: 60.0,
+    // forward speed (m/s)
+    v0: 8.2,
+    vMax: 18.5,
+    accelTime: 42.0, // seconds to reach near vMax
+    // lateral handling
+    lateralMax: 1.0,     // normalized fairway half-width (player x clamped)
+    lateralAccel: 16.0,  // sensitivity (higher = more responsive)
+    lateralDamp: 14.0,   // damping
+    returnForce: 6.5,    // recenters when not dragging
+    // spawn
+    viewDist: 72,    // meters ahead
+    spawnEvery: 0.55,
+    spawnJitter: 0.28,
+    // collision band (near player)
+    collideZ: 2.3,  // meters
+    // scoring
+    scorePerMeter: 5,
+    giftScore: 260,
+    flagScore: 900,
+    comboWindow: 1.2, // seconds without gift to keep combo
+    comboMax: 6,
+    // obstacle penalties
+    sandSlowMul: 0.52,
+    sandSlowTime: 1.0,
+    waterSlowMul: 0.35,
+    waterSlowTime: 1.4,
+    bushPush: 0.85, // lateral impulse
+    scoreHitPenalty: 180,
+  };
 
-let W, H;
-function resize() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-}
-resize();
-window.addEventListener("resize", resize);
+  // ========= DOM =========
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d', { alpha: false });
 
-let startTime = null;
-let running = false;
-let score = 0;
-let speed = 1;
-let lane = 1;
+  const uiDist = document.getElementById('uiDist');
+  const uiScore = document.getElementById('uiScore');
+  const uiTime = document.getElementById('uiTime');
 
-const lanes = [W*0.3, W*0.5, W*0.7];
-let y = H*0.7;
+  const startOverlay = document.getElementById('startOverlay');
+  const endOverlay = document.getElementById('endOverlay');
+  const endScore = document.getElementById('endScore');
+  const endDist = document.getElementById('endDist');
 
-function drawHorse(x, y, alpha=0.08) {
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = "#1F1F1F";
-  ctx.beginPath();
-  ctx.ellipse(x, y, 30, 16, 0, 0, Math.PI*2);
-  ctx.fill();
-  ctx.restore();
-}
+  const btnStart = document.getElementById('btnStart');
+  const btnHow = document.getElementById('btnHow');
+  const btnPause = document.getElementById('btnPause');
+  const btnReset = document.getElementById('btnReset');
+  const btnRestart = document.getElementById('btnRestart');
+  const btnShare = document.getElementById('btnShare');
 
-function loop(t) {
-  if (!running) return;
-  if (!startTime) startTime = t;
-  const elapsed = (t - startTime) / 1000;
+  const inpName = document.getElementById('inpName');
+  const inpBless = document.getElementById('inpBless');
+  const chipRow = document.getElementById('chipRow');
+  const toast = document.getElementById('toast');
 
-  if (elapsed >= 60) {
-    endGame();
-    return;
-  }
-
-  speed = 1 + elapsed / 40;
-  score = Math.floor(elapsed * 200);
-
-  ctx.clearRect(0,0,W,H);
-
-  // 球道線
-  ctx.strokeStyle = "#D8D5CE";
-  ctx.lineWidth = 1;
-  lanes.forEach(x=>{
-    ctx.beginPath();
-    ctx.moveTo(x,0);
-    ctx.lineTo(x,H);
-    ctx.stroke();
+  chipRow.addEventListener('click', (e)=>{
+    const t = e.target;
+    if (t && t.classList.contains('chip')){
+      inpBless.value = t.textContent.trim();
+      showToast('已填入祝福語 ✨');
+    }
   });
 
-  // 馬影
-  drawHorse(lanes[lane], y);
+  // ========= Helpers =========
+  const clamp = (v,a,b)=>Math.max(a, Math.min(b,v));
+  const lerp = (a,b,t)=>a+(b-a)*t;
+  const rand = (a,b)=>a+Math.random()*(b-a);
 
-  requestAnimationFrame(loop);
-}
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>toast.classList.remove('show'), 1100);
+  }
 
-function startGame() {
-  document.getElementById("start").classList.add("hidden");
-  document.getElementById("end").classList.add("hidden");
-  startTime = null;
-  running = true;
-  requestAnimationFrame(loop);
-}
+  // ========= Resize =========
+  let W=360,H=640,DPR=1;
+  function resize(){
+    const r = canvas.getBoundingClientRect();
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.floor(r.width * DPR);
+    canvas.height = Math.floor(r.height * DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    W = r.width; H = r.height;
+  }
+  const ro = new ResizeObserver(resize);
+  ro.observe(canvas);
+  window.addEventListener('resize', ()=>setTimeout(resize, 50));
+  window.addEventListener('orientationchange', ()=>setTimeout(resize, 120));
 
-function endGame() {
-  running = false;
-  document.getElementById("finalScore").innerText = "你走了 " + score;
-  document.getElementById("end").classList.remove("hidden");
-}
+  // ========= Game state =========
+  let running=false, paused=false;
+  let tLeft=CFG.duration;
+  let score=0;
+  let dist=0;          // meters
+  let v=CFG.v0;         // m/s
+  let slowMul=1, slowT=0;
 
-window.addEventListener("touchstart", e=>{
-  const x = e.touches[0].clientX;
-  if (x < W/2 && lane > 0) lane--;
-  if (x >= W/2 && lane < 2) lane++;
-});
+  // continuous lateral position in normalized [-1,1]
+  let x=0, vxLat=0;
+  let dragging=false;
+  let dragPrevX=0, dragPointerId=null;
 
-document.querySelectorAll(".quick span").forEach(s=>{
-  s.onclick = ()=>document.getElementById("blessing").value = s.innerText;
-});
+  let entities=[]; // {type, z, x, ...}
+  let spawnTimer=0;
 
-document.getElementById("restart").onclick = ()=>{
-  startGame();
-};
+  // combo
+  let combo=1;
+  let bestCombo=1;
+  let lastGiftTime=-999;
 
-document.getElementById("start").onclick = startGame;
+  // scene
+  let mode='start'; // start | swing | run | end
+  let swingT=0;
+
+  // ========= Input =========
+  function pointerDown(ev){
+    // allow input even during run only
+    dragging = true;
+    dragPrevX = ev.clientX;
+    dragPointerId = ev.pointerId ?? null;
+    try{ canvas.setPointerCapture?.(ev.pointerId); }catch(_){}
+  }
+  function pointerMove(ev){
+    if (!dragging) return;
+    if (dragPointerId != null && ev.pointerId != null && ev.pointerId !== dragPointerId) return;
+    const dx = (ev.clientX - dragPrevX) / Math.max(220, W*0.6);
+    // convert drag delta to lateral velocity target (sensitive)
+    vxLat += dx * CFG.lateralAccel * 3.2;
+    dragPrevX = ev.clientX;
+  }
+  function pointerUp(ev){
+    if (dragPointerId != null && ev.pointerId != null && ev.pointerId !== dragPointerId) return;
+    dragging = false;
+    dragPointerId = null;
+  }
+
+  canvas.addEventListener('pointerdown', pointerDown, {passive:true});
+  window.addEventListener('pointermove', pointerMove, {passive:true});
+  window.addEventListener('pointerup', pointerUp, {passive:true});
+  window.addEventListener('pointercancel', pointerUp, {passive:true});
+
+  window.addEventListener('keydown', (e)=>{
+    const k = e.key.toLowerCase();
+    if (k === 'r'){ resetAll(); startOverlay.style.display='flex'; endOverlay.style.display='none'; mode='start'; }
+    if (k === ' '){ togglePause(); e.preventDefault(); }
+  }, {passive:false});
+
+  // ========= UI =========
+  function updateUI(){
+    uiDist.textContent = String(Math.floor(dist));
+    uiScore.textContent = String(Math.max(0, Math.floor(score)));
+    uiTime.textContent = tLeft.toFixed(1);
+    btnPause.textContent = paused ? '▶ 繼續' : '⏸ 暫停';
+  }
+
+  // ========= World projection (isometric-lite) =========
+  function proj(zAhead){
+    // zAhead: meters ahead of player (0 = at player)
+    // map to screen y: far (high), near (low)
+    const yFar = H*0.12;
+    const yNear = H*0.86;
+    const t = clamp(zAhead / CFG.viewDist, 0, 1);
+    const y = lerp(yNear, yFar, t); // farther => higher
+    // width of fairway changes with y (narrow far)
+    const wNear = W*0.92;
+    const wFar  = W*0.28;
+    const w = lerp(wNear, wFar, t);
+    return { y, w };
+  }
+  function xToScreen(xNorm, zAhead){
+    const p = proj(zAhead);
+    return (W*0.5) + xNorm * (p.w * 0.5);
+  }
+
+  // ========= Drawing =========
+  function drawBackground(scroll){
+    // base sky/gradient
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, '#dff3e7');
+    g.addColorStop(0.55, '#eaf5ee');
+    g.addColorStop(1, '#f5fbf7');
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
+
+    // distant hills
+    ctx.globalAlpha = 0.65;
+    ctx.fillStyle = '#bfe6cd';
+    ctx.beginPath();
+    ctx.moveTo(0, H*0.22);
+    ctx.quadraticCurveTo(W*0.22, H*0.16, W*0.45, H*0.23);
+    ctx.quadraticCurveTo(W*0.72, H*0.30, W, H*0.20);
+    ctx.lineTo(W,0); ctx.lineTo(0,0); ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // parallax trees line (very subtle)
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#2f8f4a';
+    const baseY = H*0.24;
+    const shift = (scroll*0.12) % (W*0.18);
+    for(let i=-2;i<10;i++){
+      const tx = i*(W*0.18) - shift;
+      ctx.beginPath();
+      ctx.ellipse(tx, baseY+6, 22, 10, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(tx+12, baseY+10, 16, 8, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawFairway(scroll){
+    // fairway trapezoid
+    const pFar = proj(CFG.viewDist);
+    const pNear = proj(0);
+    const cx = W*0.5;
+
+    const x1 = cx - pFar.w*0.5, x2 = cx + pFar.w*0.5;
+    const x3 = cx + pNear.w*0.5, x4 = cx - pNear.w*0.5;
+
+    // rough outside
+    ctx.fillStyle = '#cfeeda';
+    ctx.fillRect(0,0,W,H);
+
+    // fairway base
+    ctx.fillStyle = '#6fc97a';
+    ctx.beginPath();
+    ctx.moveTo(x1, pFar.y);
+    ctx.lineTo(x2, pFar.y);
+    ctx.lineTo(x3, pNear.y);
+    ctx.lineTo(x4, pNear.y);
+    ctx.closePath();
+    ctx.fill();
+
+    // stripes scrolling (gives motion)
+    const stripeCount = 16;
+    for(let i=0;i<stripeCount;i++){
+      const t0 = (i/stripeCount);
+      const t1 = ((i+1)/stripeCount);
+
+      // create moving phase by shifting along z
+      const phase = (scroll*0.22) % 1; // 0..1
+      const tz0 = clamp((t0 + phase) % 1, 0, 1) * CFG.viewDist;
+      const tz1 = clamp((t1 + phase) % 1, 0, 1) * CFG.viewDist;
+
+      const a = proj(tz0);
+      const b = proj(tz1);
+
+      const w0 = a.w, w1 = b.w;
+      const y0 = a.y, y1 = b.y;
+
+      const xa1 = cx - w0*0.5, xa2 = cx + w0*0.5;
+      const xb1 = cx - w1*0.5, xb2 = cx + w1*0.5;
+
+      ctx.globalAlpha = (i%2===0) ? 0.12 : 0.06;
+      ctx.fillStyle = '#11311c';
+      ctx.beginPath();
+      ctx.moveTo(xa1, y0);
+      ctx.lineTo(xa2, y0);
+      ctx.lineTo(xb2, y1);
+      ctx.lineTo(xb1, y1);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // center line
+    ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, pFar.y);
+    ctx.lineTo(cx, pNear.y);
+    ctx.stroke();
+
+    // edge lines
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x1, pFar.y); ctx.lineTo(x4, pNear.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x2, pFar.y); ctx.lineTo(x3, pNear.y); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawBall(){
+    const zAhead = 0;
+    const py = proj(zAhead).y;
+    const px = xToScreen(x, zAhead);
+
+    // shadow
+    const sp = proj(0);
+    const speedRatio = clamp(v/CFG.vMax, 0, 1);
+    ctx.globalAlpha = 0.18 + speedRatio*0.14;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(px+6, py+18, 18 + speedRatio*10, 7 + speedRatio*2, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // ball body (solid with highlight)
+    const r = 14;
+    const ballG = ctx.createRadialGradient(px-5, py-6, 2, px, py, 18);
+    ballG.addColorStop(0, '#ffffff');
+    ballG.addColorStop(0.55, '#e9eef2');
+    ballG.addColorStop(1, '#cfd7de');
+
+    ctx.fillStyle = ballG;
+    ctx.beginPath();
+    ctx.arc(px, py, r, 0, Math.PI*2);
+    ctx.fill();
+
+    // subtle dimples
+    ctx.globalAlpha = 0.10;
+    ctx.fillStyle = '#7a8792';
+    for(let i=0;i<10;i++){
+      const a = i*0.62 + (dist*0.12);
+      ctx.beginPath();
+      ctx.arc(px + Math.cos(a)*8, py + Math.sin(a)*6, 1.2, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // highlight
+    ctx.globalAlpha = 0.65;
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath();
+    ctx.ellipse(px-5, py-7, 6, 4, -0.5, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawEntity(e){
+    // e.z: meters ahead (positive)
+    const p = proj(e.z);
+    const px = xToScreen(e.x, e.z);
+    const py = p.y;
+    const scale = lerp(1.12, 0.48, clamp(e.z/CFG.viewDist,0,1));
+
+    if (e.type === 'gift'){
+      // red envelope
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.scale(scale, scale);
+      ctx.rotate(Math.sin((performance.now()/220)+e.w)*0.12);
+
+      ctx.fillStyle = '#f24a5a';
+      ctx.strokeStyle = 'rgba(17,49,28,.18)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      roundRect(ctx, -14, -10, 28, 20, 6);
+      ctx.fill(); ctx.stroke();
+
+      ctx.fillStyle = '#ffd7dc';
+      ctx.beginPath();
+      ctx.moveTo(-14, -10);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(14, -10);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#c7a13a';
+      ctx.beginPath();
+      ctx.arc(0, 4, 3.2, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.restore();
+      return;
+    }
+
+    if (e.type === 'flag'){
+      // flag pin
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.scale(scale, scale);
+
+      ctx.strokeStyle = 'rgba(17,49,28,.55)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, 14);
+      ctx.lineTo(0, -14);
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.globalAlpha = 0.95;
+      ctx.beginPath();
+      ctx.moveTo(0, -14);
+      ctx.lineTo(16, -10);
+      ctx.lineTo(0, -6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      ctx.fillStyle = '#c7a13a';
+      ctx.beginPath();
+      ctx.arc(0, 14, 6, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.restore();
+      return;
+    }
+
+    // obstacles
+    if (e.type === 'sand'){
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.scale(scale, scale);
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = '#e8d59a';
+      ctx.strokeStyle = 'rgba(17,49,28,.18)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(0, 8, 26, 14, -0.2, 0, Math.PI*2);
+      ctx.fill(); ctx.stroke();
+
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = '#11311c';
+      for(let i=0;i<6;i++){
+        ctx.beginPath();
+        ctx.ellipse(rand(-12,12), rand(3,14), rand(3,6), rand(1.4,3.2), rand(-0.6,0.6), 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+      return;
+    }
+
+    if (e.type === 'water'){
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.scale(scale, scale);
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = '#4fb3f6';
+      ctx.strokeStyle = 'rgba(17,49,28,.18)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-30, 2);
+      ctx.quadraticCurveTo(-14, -14, 8, -10);
+      ctx.quadraticCurveTo(26, -6, 32, 10);
+      ctx.quadraticCurveTo(8, 22, -18, 18);
+      ctx.quadraticCurveTo(-30, 14, -30, 2);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+
+      ctx.globalAlpha = 0.28;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(-10, 4, 10, 0.2, 2.6);
+      ctx.stroke();
+      ctx.restore();
+      ctx.globalAlpha = 1;
+      return;
+    }
+
+    if (e.type === 'bush'){
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.scale(scale, scale);
+      ctx.globalAlpha = 0.96;
+      ctx.fillStyle = '#2f8f4a';
+      ctx.strokeStyle = 'rgba(17,49,28,.22)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(-12, 10, 14, 10, 0, 0, Math.PI*2);
+      ctx.ellipse(  0,  6, 18, 13, 0, 0, Math.PI*2);
+      ctx.ellipse( 14, 11, 13, 9, 0, 0, Math.PI*2);
+      ctx.fill(); ctx.stroke();
+
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = '#11311c';
+      ctx.beginPath();
+      ctx.ellipse(2, 6, 10, 7, 0.2, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+      ctx.globalAlpha = 1;
+      return;
+    }
+  }
+
+  function roundRect(ctx,x,y,w,h,r){
+    r = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  function drawSwingScene(dt){
+    // tee box + crowd + golfer swing
+    drawBackground(dist);
+    // ground
+    ctx.fillStyle = '#6fc97a';
+    ctx.fillRect(0, H*0.40, W, H*0.60);
+
+    // tee box
+    ctx.fillStyle = '#5bb96a';
+    ctx.beginPath();
+    ctx.roundRect?.(W*0.16, H*0.70, W*0.68, H*0.16, 18);
+    if (!ctx.roundRect){
+      roundRect(ctx, W*0.16, H*0.70, W*0.68, H*0.16, 18);
+    }
+    ctx.fill();
+
+    // crowd silhouettes
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = '#11311c';
+    const crowdY = H*0.60;
+    const crowdW = W*0.08;
+    const wave = Math.sin(performance.now()/380)*2.2;
+    for(let i=0;i<12;i++){
+      const cx = W*0.08 + i*(W*0.07);
+      ctx.beginPath();
+      ctx.ellipse(cx, crowdY + wave, 10, 8, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(cx, crowdY + 18 + wave, 8, 12, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // golfer
+    const gx = W*0.50, gy = H*0.76;
+    ctx.save();
+    ctx.translate(gx, gy);
+
+    // swing animation in two phases
+    const t = clamp(swingT / 2.0, 0, 1); // 2s
+    const ease = t<0.5 ? (t*t*2) : (1 - (1-t)*(1-t)*2);
+    const angle = lerp(-1.4, 0.75, ease); // club arc
+
+    // body
+    ctx.fillStyle = '#11311c';
+    ctx.globalAlpha = 0.92;
+    ctx.beginPath(); ctx.ellipse(0, 18, 12, 20, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-10, 44, 10, 18, 0.15, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse( 10, 44, 10, 18, -0.15, 0, Math.PI*2); ctx.fill();
+    // head
+    ctx.beginPath(); ctx.ellipse(0, 0, 10, 10, 0, 0, Math.PI*2); ctx.fill();
+
+    // club
+    ctx.globalAlpha = 0.85;
+    ctx.strokeStyle = '#11311c';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0, 20);
+    ctx.lineTo(Math.cos(angle)*58, Math.sin(angle)*58);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    ctx.restore();
+
+    // ball on tee moving at end
+    const launch = clamp((swingT-1.05)/0.6, 0, 1);
+    const bx = W*0.52 + launch* (W*0.10);
+    const by = H*0.84 - launch* (H*0.22);
+    // ball
+    ctx.globalAlpha = 1;
+    const bg = ctx.createRadialGradient(bx-5, by-6, 2, bx, by, 14);
+    bg.addColorStop(0,'#fff'); bg.addColorStop(0.6,'#e9eef2'); bg.addColorStop(1,'#cfd7de');
+    ctx.fillStyle = bg;
+    ctx.beginPath(); ctx.arc(bx, by, 10, 0, Math.PI*2); ctx.fill();
+
+    // cue text
+    ctx.fillStyle = 'rgba(17,49,28,.68)';
+    ctx.font = '600 13px ui-sans-serif, system-ui';
+    ctx.fillText('開球中…', 14, 22);
+  }
+
+  // ========= Spawning =========
+  function spawn(){
+    // spawn at far range with random lateral within fairway
+    // weights: more sand/bush, occasional water, gifts frequent, flag rare
+    const z = CFG.viewDist - rand(4, 10);
+    const xPos = rand(-0.95, 0.95);
+
+    const r = Math.random();
+    if (r < 0.40){
+      entities.push({type:'gift', z, x:xPos, w: rand(0.6, 1.4)});
+    }else if (r < 0.46){
+      entities.push({type:'flag', z, x:xPos});
+    }else if (r < 0.70){
+      entities.push({type:'sand', z, x:xPos});
+    }else if (r < 0.88){
+      entities.push({type:'bush', z, x:xPos});
+    }else{
+      entities.push({type:'water', z, x:xPos});
+    }
+  }
+
+  function applyGift(now){
+    // combo logic
+    if (now - lastGiftTime <= CFG.comboWindow) combo = Math.min(CFG.comboMax, combo+1);
+    else combo = 1;
+    bestCombo = Math.max(bestCombo, combo);
+    lastGiftTime = now;
+  }
+
+  // ========= Collision =========
+  function hitTest(e){
+    // consider objects close to player (z small)
+    if (e.z > CFG.collideZ) return false;
+
+    // widen collision threshold based on object type
+    const base = 0.12;
+    const th = (e.type==='gift' || e.type==='flag') ? base : (e.type==='sand' ? 0.18 : (e.type==='water' ? 0.20 : 0.17));
+    return Math.abs(x - e.x) <= th;
+  }
+
+  function onHitObstacle(type){
+    score = Math.max(0, score - CFG.scoreHitPenalty);
+    if (type === 'sand'){
+      slowMul = Math.min(slowMul, CFG.sandSlowMul);
+      slowT = Math.max(slowT, CFG.sandSlowTime);
+    }else if (type === 'water'){
+      slowMul = Math.min(slowMul, CFG.waterSlowMul);
+      slowT = Math.max(slowT, CFG.waterSlowTime);
+      combo = 1;
+    }else if (type === 'bush'){
+      // lateral impulse
+      vxLat += (Math.random()<0.5?-1:1) * CFG.bushPush;
+      combo = 1;
+    }
+  }
+
+  // ========= Main loop =========
+  let lastTs=0;
+
+  function step(ts){
+    if (!running) return;
+    const dt = Math.min(0.033, (ts-lastTs)/1000 || 0);
+    lastTs = ts;
+
+    if (paused){
+      drawFrame(0);
+      requestAnimationFrame(step);
+      return;
+    }
+
+    if (mode === 'swing'){
+      swingT += dt;
+      drawSwingScene(dt);
+      if (swingT >= 2.0){
+        mode = 'run';
+        // small kick forward so first frame feels alive
+        dist = 0;
+        tLeft = CFG.duration;
+        score = 0;
+        combo = 1;
+        bestCombo = 1;
+        lastGiftTime = -999;
+        entities = [];
+        spawnTimer = 0;
+        x = 0; vxLat = 0;
+      }
+      requestAnimationFrame(step);
+      return;
+    }
+
+    // run
+    tLeft -= dt;
+    if (tLeft <= 0){
+      tLeft = 0;
+      updateUI();
+      drawFrame(dt);
+      endGame();
+      return;
+    }
+
+    // speed curve (ease to max)
+    const t = clamp((CFG.duration - tLeft)/CFG.accelTime, 0, 1);
+    const ease = 1 - Math.pow(1-t, 2.2);
+    const baseV = lerp(CFG.v0, CFG.vMax, ease);
+
+    // slow effect decay
+    if (slowT > 0){
+      slowT -= dt;
+      if (slowT <= 0){ slowT = 0; slowMul = 1; }
+    }else{
+      slowMul = lerp(slowMul, 1, dt*3.2);
+    }
+    v = baseV * slowMul;
+
+    // forward move
+    dist += v * dt;
+
+    // distance-based score
+    score += (v * dt) * CFG.scorePerMeter;
+
+    // combo decay if no gift
+    const now = ts/1000;
+    if (now - lastGiftTime > CFG.comboWindow) combo = 1;
+
+    // lateral physics (sensitive)
+    // if not dragging, apply gentle return to center
+    const axReturn = dragging ? 0 : (-x * CFG.returnForce);
+
+    // damping + return
+    vxLat += axReturn * dt;
+    vxLat *= Math.exp(-CFG.lateralDamp * dt);
+
+    // integrate
+    x += vxLat * dt;
+    x = clamp(x, -CFG.lateralMax, CFG.lateralMax);
+
+    // spawn
+    spawnTimer -= dt;
+    if (spawnTimer <= 0){
+      spawn();
+      spawnTimer = CFG.spawnEvery + rand(-CFG.spawnJitter, CFG.spawnJitter);
+    }
+
+    // move entities toward player by reducing z
+    for(const e of entities) e.z -= v * dt;
+
+    // handle collisions & cleanup
+    for(let i=entities.length-1;i>=0;i--){
+      const e = entities[i];
+      if (e.z < -6){
+        entities.splice(i,1);
+        continue;
+      }
+
+      if (hitTest(e)){
+        if (e.type === 'gift'){
+          entities.splice(i,1);
+          applyGift(now);
+          score += CFG.giftScore * combo;
+        }else if (e.type === 'flag'){
+          entities.splice(i,1);
+          applyGift(now);
+          score += CFG.flagScore * Math.max(1, Math.floor(combo/2)+1);
+        }else{
+          // obstacle
+          entities.splice(i,1);
+          onHitObstacle(e.type);
+        }
+      }
+    }
+
+    updateUI();
+    drawFrame(dt);
+    requestAnimationFrame(step);
+  }
+
+  function drawFrame(dt){
+    drawBackground(dist);
+    drawFairway(dist);
+
+    // sort entities by z descending (far first)
+    const visible = entities.filter(e => e.z <= CFG.viewDist+5 && e.z >= -6);
+    visible.sort((a,b)=>b.z - a.z);
+    for(const e of visible){
+      if (e.z >= 0) drawEntity(e);
+    }
+
+    // ball last
+    if (mode === 'run') drawBall();
+
+    // small combo indicator
+    if (mode === 'run'){
+      ctx.save();
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = 'rgba(17,49,28,.70)';
+      ctx.font = '700 12px ui-sans-serif, system-ui';
+      const txt = (combo>1) ? (`Combo x${combo}`) : '';
+      if (txt){
+        ctx.fillText(txt, 14, H-14);
+      }
+      ctx.restore();
+    }
+
+    if (paused && running){
+      ctx.save();
+      ctx.globalAlpha = 0.42;
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0,0,W,H);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = 'rgba(255,255,255,.92)';
+      ctx.font = '800 22px ui-sans-serif, system-ui';
+      ctx.fillText('暫停中', W/2 - 38, H/2 - 8);
+      ctx.fillStyle = 'rgba(255,255,255,.80)';
+      ctx.font = '14px ui-sans-serif, system-ui';
+      ctx.fillText('按「暫停」或空白鍵繼續', W/2 - 92, H/2 + 18);
+      ctx.restore();
+    }
+  }
+
+  // ========= Game control =========
+  function resetAll(){
+    running=false; paused=false;
+    tLeft=CFG.duration; score=0; dist=0; v=CFG.v0;
+    slowMul=1; slowT=0;
+    x=0; vxLat=0;
+    entities=[];
+    spawnTimer=0;
+    combo=1; bestCombo=1; lastGiftTime=-999;
+    mode='start';
+    swingT=0;
+    updateUI();
+    drawBackground(0);
+    drawFairway(0);
+  }
+
+  function startGame(){
+    startOverlay.style.display = 'none';
+    endOverlay.style.display = 'none';
+    running = true;
+    paused = false;
+    mode = 'swing';
+    swingT = 0;
+    lastTs = performance.now();
+    requestAnimationFrame(step);
+  }
+
+  function endGame(){
+    running = false;
+    paused = false;
+    mode = 'end';
+    endScore.textContent = String(Math.max(0, Math.floor(score)));
+    endDist.textContent = String(Math.floor(dist));
+    endOverlay.style.display = 'flex';
+  }
+
+  function togglePause(){
+    if (!running || mode !== 'run') return;
+    paused = !paused;
+    updateUI();
+  }
+
+  // share
+  async function shareScore(){
+    const name = (inpName.value || '我').trim();
+    const bless = (inpBless.value || '').trim();
+    const s = Math.max(0, Math.floor(score));
+    const d = Math.floor(dist);
+
+    const msg =
+`⛳ 馬年球道衝刺（60s）
+${name}：${s} 分｜${d} m
+祝福：${bless}
+— 弘騏興業有限公司`;
+
+    try{
+      await navigator.clipboard.writeText(msg);
+      showToast('已複製分享文字 ✅');
+    }catch(err){
+      window.prompt('複製這段文字分享：', msg);
+    }
+  }
+
+  // ========= Buttons =========
+  btnStart.addEventListener('click', startGame);
+  btnRestart.addEventListener('click', ()=>{
+    // require blessing? (as per spec later for leaderboard; here we allow restart without)
+    startGame();
+  });
+  btnPause.addEventListener('click', togglePause);
+  btnReset.addEventListener('click', ()=>{
+    resetAll();
+    startOverlay.style.display = 'flex';
+    endOverlay.style.display = 'none';
+  });
+
+  btnShare.addEventListener('click', ()=>{
+    // blessing must not be empty (your rule)
+    const bless = (inpBless.value || '').trim();
+    if (!bless){
+      showToast('祝福語必填 🙏');
+      inpBless.focus();
+      return;
+    }
+    shareScore();
+  });
+
+  btnHow.addEventListener('click', ()=>{
+    showToast('提示：拖曳=推球｜鬆手回正｜障礙不結束但會降速/扣分');
+  });
+
+  // prevent empty blessing on end screen when we later upload
+  inpBless.addEventListener('input', ()=>{
+    if (inpBless.value.length > 18) inpBless.value = inpBless.value.slice(0,18);
+  });
+  inpName.addEventListener('input', ()=>{
+    if (inpName.value.length > 8) inpName.value = inpName.value.slice(0,8);
+  });
+
+  // ========= Boot =========
+  setTimeout(()=>{
+    resize();
+    resetAll();
+  }, 0);
+
+})();
 </script>
 </body>
 </html>
