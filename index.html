@@ -138,7 +138,26 @@
       .badge{font-size:10px}
     }
 
-  </style>
+  
+/* Phase 2 inputs */
+.phase2{margin-top:14px;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(0,0,0,.14)}
+.phase2Title{font-size:12px;color:var(--muted2);margin-bottom:10px}
+.phase2Form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:720px){.phase2Form{grid-template-columns:1fr}}
+.field .label{font-size:12px;color:var(--muted2);margin-bottom:6px}
+.field input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18);color:rgba(255,255,255,.92);outline:none}
+.field input:focus{border-color:rgba(247,211,122,.55);box-shadow:0 0 0 4px rgba(247,211,122,.10)}
+.field .hint{font-size:11px;color:rgba(255,255,255,.45);margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{border-radius:999px;padding:7px 10px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.06);color:rgba(255,255,255,.82);cursor:pointer}
+.chip:active{transform:translateY(1px)}
+.submitRow{display:flex;align-items:center;gap:10px;margin-top:12px}
+.submitState{font-size:12px;color:rgba(255,255,255,.60)}
+.submitState.ok{color:rgba(120,255,170,.85)}
+.submitState.bad{color:rgba(255,120,120,.85)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+</style>
 </head>
 <body>
   <div id="wrap">
@@ -193,7 +212,8 @@
             </ul>
           </div>
 
-          <div class="row">
+          
+<div class="row">
             <button class="btn primary" id="startBtn">開始遊戲</button>
             <button class="btn" id="howBtn">我怎麼玩？</button>
           </div>
@@ -230,6 +250,34 @@
             <div class="stat">
               <div class="k">本機最高分</div>
               <div class="v" id="bestScore">0</div>
+            </div>
+          </div>
+
+          <div class="phase2">
+            <div class="phase2Title">留下你的名字與祝福（上榜用）</div>
+            <div class="phase2Form">
+              <div class="field">
+                <div class="label">名字或暱稱（必填）</div>
+                <input id="nameInput" maxlength="12" placeholder="輸入名字或暱稱" autocomplete="off" />
+                <div class="hint">最多 12 字</div>
+              </div>
+
+              <div class="field">
+                <div class="label">祝福語（可留空）</div>
+                <input id="msgInput" maxlength="40" placeholder="留一句祝福吧～" autocomplete="off" />
+                <div class="chips" id="msgChips">
+                  <button class="chip" type="button">新年快樂 🎉</button>
+                  <button class="chip" type="button">恭喜發財 🧧</button>
+                  <button class="chip" type="button">平安順心 ✨</button>
+                  <button class="chip" type="button">好運連連 🍀</button>
+                  <button class="chip" type="button">天天好心情 😊</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="submitRow">
+              <button class="btn primary" id="submitBtn">送出上榜</button>
+              <div class="submitState" id="submitState">尚未送出</div>
             </div>
           </div>
 
@@ -377,6 +425,77 @@ const closeHow2=document.getElementById('closeHow2');
 const retryBtn=document.getElementById('retryBtn');
 const shareBtn=document.getElementById('shareBtn');
 const shareCardBtn=document.getElementById('shareCardBtn');
+let nameInput=null;
+let msgInput=null;
+let msgChips=null;
+let submitBtn=null;
+let submitState=null;
+
+let submitted=false;
+
+function sanitizeText(str){
+  return (str||"").replace(/[<>]/g,"").replace(/\s+/g," ").trim();
+}
+function validatePhase2(){
+  const name = sanitizeText(nameInput?.value);
+  if(submitBtn){
+    submitBtn.disabled = (!name || name.length<1);
+  }
+}
+function setSubmitState(type, text){
+  if(!submitState) return;
+  submitState.classList.remove('ok','bad');
+  if(type) submitState.classList.add(type);
+  submitState.textContent = text;
+}
+
+function bindPhase2Refs(){
+  // Phase 2 elements live in endOverlay (avoid duplicate IDs)
+  nameInput = endOverlay.querySelector('#nameInput');
+  msgInput  = endOverlay.querySelector('#msgInput');
+  msgChips  = endOverlay.querySelector('#msgChips');
+  submitBtn = endOverlay.querySelector('#submitBtn');
+  submitState = endOverlay.querySelector('#submitState');
+
+  if(nameInput){ nameInput.oninput = validatePhase2; }
+  if(msgInput){ msgInput.oninput = validatePhase2; }
+
+  if(msgChips && msgInput){
+    msgChips.querySelectorAll('.chip').forEach(btn=>{
+      btn.onclick = ()=>{
+        msgInput.value = btn.textContent;
+        validatePhase2();
+      };
+    });
+  }
+
+  if(submitBtn){
+    submitBtn.onclick = async ()=>{
+      const name = sanitizeText(nameInput?.value);
+      const message = sanitizeText(msgInput?.value);
+      if(!name){
+        setSubmitState('bad','請先填名字');
+        return;
+      }
+      submitBtn.disabled = true;
+      setSubmitState('', '送出中…');
+      try{
+        const payload = { name, message, score: score, maxMult: maxMult, perfect: perfectHits, at: Date.now() };
+        localStorage.setItem('hongbao_last_submit', JSON.stringify(payload));
+        await new Promise(r=>setTimeout(r, 450));
+        submitted = true;
+        setSubmitState('ok','已送出（待接 Firebase 排行榜）');
+      }catch(e){
+        console.error(e);
+        setSubmitState('bad','送出失敗，請再試一次');
+        submitBtn.disabled = false;
+      }
+    };
+  }
+
+  validatePhase2();
+}
+
 const soundBtn=document.getElementById('soundBtn');
 const soundLbl=document.getElementById('soundLbl');
 
@@ -759,7 +878,9 @@ async function copyText(msg){
 }
 function buildShareText(){
   const title=`我在《${CONFIG.gameTitle}》搶到 ${fmtInt(score)} 分！`;
-  const detail=`Perfect ${perfectHits} 次｜加分 ${goodHits}｜扣分 ${badHits}｜最高倍率 x${maxMult}`;
+  const n = sanitizeText(nameInput?.value);
+  const m = sanitizeText(msgInput?.value);
+  const detail=`${n?('玩家 '+n+'｜'):''}Perfect ${perfectHits} 次｜加分 ${goodHits}｜扣分 ${badHits}｜最高倍率 x${maxMult}${m?('｜'+m):''}`;
   const wish=`${CONFIG.companyName}｜${CONFIG.blessing}`;
   const link=(location.href && location.href.startsWith('http')) ? `\n一起玩：${location.href}` : "";
   return `${title}\n${detail}\n${wish}${link}`;
@@ -800,6 +921,13 @@ function endGame(){
   bestScoreEl.textContent=fmtInt(best);
 
   endOverlay.classList.remove('hide');
+  // Phase 2 reset
+  submitted=false;
+  if(nameInput) nameInput.value='';
+  if(msgInput) msgInput.value='';
+  if(submitBtn) submitBtn.disabled=true;
+  setSubmitState('', '尚未送出');
+  bindPhase2Refs();
 }
 
 /* =========================
@@ -1371,7 +1499,7 @@ function renderShareCardPNG(){
   g.fillText('貼到LINE群', w-310, 156);
 
   // Score panel
-  const px=84, py=270, pw=w-168, ph=620;
+  const px=84, py=250, pw=w-168, ph=700;
   roundRect(g, px,py,pw,ph,42);
   const pg = g.createLinearGradient(0,py,0,py+ph);
   pg.addColorStop(0,'rgba(255,255,255,.10)');
@@ -1397,6 +1525,10 @@ function renderShareCardPNG(){
   g.fillStyle='rgba(255,255,255,.70)';
   g.font='800 34px ui-sans-serif, system-ui';
   g.fillText('你搶到幾分？來挑戰我！', px+54, py+560);
+  const n = sanitizeText(nameInput?.value);
+  const m = sanitizeText(msgInput?.value);
+  if(n){ g.font = `700 ${Math.round(38*dpr)}px ui-sans-serif, system-ui`; g.fillStyle='rgba(255,255,255,.92)'; g.fillText(n, px+54, py+612); }
+  if(m){ g.font = `${Math.round(28*dpr)}px ui-sans-serif, system-ui`; g.fillStyle='rgba(255,255,255,.72)'; g.fillText(m, px+54, py+652); }
 
   // Footer
   g.fillStyle='rgba(255,255,255,.92)';
