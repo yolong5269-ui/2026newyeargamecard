@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Wabi Flow — Quiet Run</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #F5F3EE;
+  font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif;
+  color: #1F1F1F;
+  height: 100%;
+  overflow: hidden;
+}
+
+#app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+canvas {
+  display: block;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(245,243,238,0.92);
+}
+
+.hidden {
+  display: none;
+}
+
+.title {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #6F6F6F;
+  line-height: 1.6;
+}
+
+.score {
+  font-size: 28px;
+  margin-bottom: 16px;
+}
+
+input, button {
+  font-size: 14px;
+  padding: 10px;
+  margin-top: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #D8D5CE;
+  background: #F5F3EE;
+}
+
+button {
+  background: #1F1F1F;
+  color: #F5F3EE;
+  border: none;
+}
+
+.quick {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #6F6F6F;
+}
+
+.quick span {
+  display: inline-block;
+  margin-top: 4px;
+  margin-right: 6px;
+  padding: 4px 8px;
+  border: 1px solid #D8D5CE;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+<div id="app">
+  <canvas id="game"></canvas>
+
+  <!-- 開場 -->
+  <div id="start" class="overlay">
+    <div class="title">Wabi Flow</div>
+    <div class="subtitle">靜靜向前，一路都有風</div>
+  </div>
+
+  <!-- 結束 -->
+  <div id="end" class="overlay hidden">
+    <div class="score" id="finalScore"></div>
+
+    <input id="name" placeholder="暱稱" />
+    <input id="blessing" placeholder="祝福語（必填）" />
+
+    <div class="quick">
+      快捷祝福：
+      <span>慢慢跑，也會跑得遠</span>
+      <span>穩穩向前，好事發生</span>
+      <span>一路有風，心也很靜</span>
+    </div>
+
+    <button id="restart">再走一次</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+let startTime = null;
+let running = false;
+let score = 0;
+let speed = 1;
+let lane = 1;
+
+const lanes = [W*0.3, W*0.5, W*0.7];
+let y = H*0.7;
+
+function drawHorse(x, y, alpha=0.08) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = "#1F1F1F";
+  ctx.beginPath();
+  ctx.ellipse(x, y, 30, 16, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function loop(t) {
+  if (!running) return;
+  if (!startTime) startTime = t;
+  const elapsed = (t - startTime) / 1000;
+
+  if (elapsed >= 60) {
+    endGame();
+    return;
+  }
+
+  speed = 1 + elapsed / 40;
+  score = Math.floor(elapsed * 200);
+
+  ctx.clearRect(0,0,W,H);
+
+  // 球道線
+  ctx.strokeStyle = "#D8D5CE";
+  ctx.lineWidth = 1;
+  lanes.forEach(x=>{
+    ctx.beginPath();
+    ctx.moveTo(x,0);
+    ctx.lineTo(x,H);
+    ctx.stroke();
+  });
+
+  // 馬影
+  drawHorse(lanes[lane], y);
+
+  requestAnimationFrame(loop);
+}
+
+function startGame() {
+  document.getElementById("start").classList.add("hidden");
+  document.getElementById("end").classList.add("hidden");
+  startTime = null;
+  running = true;
+  requestAnimationFrame(loop);
+}
+
+function endGame() {
+  running = false;
+  document.getElementById("finalScore").innerText = "你走了 " + score;
+  document.getElementById("end").classList.remove("hidden");
+}
+
+window.addEventListener("touchstart", e=>{
+  const x = e.touches[0].clientX;
+  if (x < W/2 && lane > 0) lane--;
+  if (x >= W/2 && lane < 2) lane++;
+});
+
+document.querySelectorAll(".quick span").forEach(s=>{
+  s.onclick = ()=>document.getElementById("blessing").value = s.innerText;
+});
+
+document.getElementById("restart").onclick = ()=>{
+  startGame();
+};
+
+document.getElementById("start").onclick = startGame;
+</script>
+</body>
+</html>
