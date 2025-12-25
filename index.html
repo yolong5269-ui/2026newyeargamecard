@@ -1,1181 +1,1410 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<meta name="theme-color" content="#1f7a3a" />
-<title>馬年球道衝刺｜Green Run</title>
-<style>
-  :root{
-    --bg:#eaf7ef;
-    --ink:#0b2b16;
-    --muted: rgba(11,43,22,.62);
-    --line: rgba(11,43,22,.12);
-
-    --card: rgba(255,255,255,.84);
-    --card2: rgba(255,255,255,.94);
-
-    --green:#1f7a3a;
-    --green2:#2ea954;
-    --red:#e94b5a;
-    --gold:#d3b24a;
-    --water:#42a5f5;
-    --sand:#f2d38d;
-
-    --safe-top: env(safe-area-inset-top);
-    --safe-bottom: env(safe-area-inset-bottom);
-  }
-
-  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
-  html,body{ height:100%; margin:0; background:var(--bg); font-family: ui-sans-serif, system-ui, -apple-system, "PingFang TC","Noto Sans TC", Arial; color:var(--ink); overflow:hidden; }
-
-  #app{
-    height:100%;
-    max-width: 740px;
-    margin: 0 auto;
-    padding: calc(12px + var(--safe-top)) 12px calc(12px + var(--safe-bottom));
-    display:grid;
-    grid-template-rows:auto 1fr auto;
-    gap: 10px;
-  }
-
-  header, footer{
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    background: linear-gradient(180deg, var(--card2), var(--card));
-    backdrop-filter: blur(10px);
-    box-shadow: 0 12px 30px rgba(0,0,0,.06);
-    padding: 10px 12px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap: 10px;
-  }
-
-  .brand{
-    display:flex; flex-direction:column; gap:2px; min-width: 180px;
-  }
-  .brand .t{
-    display:flex; align-items:baseline; gap:8px;
-    font-weight: 900;
-    letter-spacing:.2px;
-    font-size: 15px;
-  }
-  .brand .tag{
-    font-size: 12px;
-    color: var(--muted);
-    line-height: 1.2;
-  }
-
-  .hud{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
-  .pill{
-    background: rgba(255,255,255,.80);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 7px 10px;
-    font-size: 12px;
-    color: var(--muted);
-    display:flex; align-items:baseline; gap:6px;
-    min-width: 98px;
-    justify-content:space-between;
-  }
-  .pill b{ color: var(--ink); font-weight: 900; }
-  .pill .u{ opacity:.75; font-size: 11px; }
-
-  main{
-    position:relative;
-    border-radius: 20px;
-    overflow:hidden;
-    border: 1px solid var(--line);
-    background: #f7fffa;
-    box-shadow: 0 18px 45px rgba(0,0,0,.08);
-  }
-  canvas{ width:100%; height:100%; display:block; }
-
-  .overlay{
-    position:absolute; inset:0;
-    display:flex;
-    align-items:flex-end;
-    justify-content:center;
-    padding: 16px;
-    background:
-      radial-gradient(1000px 700px at 50% 30%, rgba(255,255,255,.92) 0%, rgba(234,247,239,.82) 42%, rgba(234,247,239,.62) 100%);
-  }
-
-  .card{
-    width: min(560px, 100%);
-    border-radius: 20px;
-    border: 1px solid var(--line);
-    background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(255,255,255,.82));
-    box-shadow: 0 22px 60px rgba(0,0,0,.10);
-    padding: 14px 14px;
-  }
-  .card h1{ margin:0; font-size: 18px; letter-spacing:.2px; }
-  .card p{ margin: 8px 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
-  .row{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px; }
-
-  button{
-    cursor:pointer;
-    user-select:none;
-    border-radius: 14px;
-    padding: 10px 12px;
-    border: 1px solid var(--line);
-    background: rgba(255,255,255,.92);
-    color: var(--ink);
-    font-weight: 850;
-    letter-spacing:.2px;
-  }
-  button.primary{
-    background: linear-gradient(180deg, rgba(31,122,58,.98), rgba(46,169,84,.92));
-    color: white;
-    border-color: rgba(31,122,58,.25);
-  }
-  button.ghost{
-    background: transparent;
-  }
-  button:active{ transform: translateY(1px); }
-
-  .hint{ font-size: 12px; color: var(--muted); line-height: 1.45; }
-  .hint code{ background: rgba(11,43,22,.06); border: 1px solid rgba(11,43,22,.10); padding: 1px 6px; border-radius: 999px; color: var(--ink); }
-
-  footer{ justify-content:space-between; }
-  .footerLeft{ display:flex; flex-direction:column; gap:4px; }
-  .footerBtns{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
-
-  .toast{
-    position:absolute; left:50%; bottom: 14px;
-    transform: translateX(-50%);
-    background: rgba(11,43,22,.88);
-    color: rgba(255,255,255,.96);
-    border: 1px solid rgba(255,255,255,.24);
-    padding: 10px 12px;
-    border-radius: 999px;
-    font-size: 13px;
-    opacity:0; pointer-events:none;
-    transition: opacity .18s ease, transform .18s ease;
-    box-shadow: 0 18px 50px rgba(0,0,0,.18);
-  }
-  .toast.show{ opacity:1; transform: translateX(-50%) translateY(-4px); }
-
-  /* End screen */
-  .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top: 10px; }
-  .stat{
-    border: 1px solid var(--line);
-    background: rgba(255,255,255,.82);
-    border-radius: 14px;
-    padding: 10px 12px;
-  }
-  .stat .k{ font-size: 12px; color: var(--muted); }
-  .stat .v{ font-size: 18px; font-weight: 920; margin-top: 2px; }
-
-  .field{ margin-top: 10px; }
-  .field label{ font-size: 12px; color: var(--muted); display:block; margin-bottom: 6px; }
-  input, textarea{
-    width: 100%;
-    border-radius: 14px;
-    border: 1px solid var(--line);
-    background: rgba(255,255,255,.92);
-    padding: 10px 12px;
-    font-size: 14px;
-    color: var(--ink);
-    outline: none;
-  }
-  textarea{ resize:none; min-height: 46px; }
-  .chips{ display:flex; gap:8px; flex-wrap:wrap; margin-top: 8px; }
-  .chip{
-    border:1px solid var(--line);
-    background: rgba(255,255,255,.86);
-    border-radius: 999px;
-    padding: 7px 10px;
-    font-size: 12px;
-    color: var(--muted);
-    cursor:pointer;
-    user-select:none;
-  }
-  .chip:hover{ border-color: rgba(11,43,22,.18); }
-  .chip:active{ transform: translateY(1px); }
-
-  .cardFooterBlessing{
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px dashed rgba(11,43,22,.18);
-    color: rgba(11,43,22,.92);
-    line-height: 1.55;
-  }
-  .cardFooterBlessing .company{ color: var(--muted); font-size: 12px; margin-top: 6px; }
-
-  @media (max-width: 420px){
-    header{ padding: 10px 10px; }
-    .pill{ min-width: 92px; padding: 7px 9px; }
-    .grid2{ grid-template-columns: 1fr; }
-  }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>搶紅包快閃｜新年互動賀卡</title>
+  <style>
+    :root{
+      --bg0:#090404;
+      --bg1:#160b0b;
+      --gold:#f7d37a;
+      --red:#ff4d4d;
+      --muted:rgba(255,255,255,.72);
+      --muted2:rgba(255,255,255,.55);
+    }
+    *{box-sizing:border-box;font-family: ui-sans-serif, system-ui, -apple-system, "PingFang TC", "Noto Sans TC", "Segoe UI", sans-serif;}
+    html,body{height:100%;margin:0;background:radial-gradient(1200px 900px at 50% 20%, #3a1414 0%, var(--bg1) 40%, var(--bg0) 100%);color:#fff;overflow:hidden}
+    #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+    canvas{position:absolute;inset:0;width:100%;height:100%;}
+    .ui{position:absolute;inset:0;pointer-events:none;}
+    .hud{position:absolute;top:14px;left:14px;right:14px;display:flex;gap:10px;align-items:center;justify-content:space-between;}
+    .pill{
+      background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(0,0,0,.38));
+      border:1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(10px);
+      border-radius:16px;padding:10px 12px;min-width:92px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .pill .k{font-size:11px;color:var(--muted2);letter-spacing:.10em}
+    .pill .v{font-size:18px;font-weight:900;line-height:1.1;margin-top:2px}
+    .pill.big .v{font-size:22px}
+    .right{display:flex;gap:10px;align-items:center}
+    .btnRow{position:absolute;left:0;right:0;bottom:18px;display:flex;justify-content:center;gap:12px;pointer-events:auto;padding:0 16px}
+    .btn{
+      border:1px solid rgba(255,255,255,.14);
+      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.35));
+      color:#fff;border-radius:18px;padding:14px 16px;font-weight:900;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      user-select:none;touch-action:manipulation;
+      display:flex;align-items:center;gap:10px
+    }
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{
+      padding:16px 18px;border-radius:22px;
+      background:linear-gradient(180deg, rgba(255,77,77,.26), rgba(0,0,0,.35));
+      border:1px solid rgba(255,77,77,.45);
+    }
+    .btn.small{padding:10px 12px;border-radius:14px;font-weight:800}
+    .iconDot{width:10px;height:10px;border-radius:999px;background:var(--gold);box-shadow:0 0 0 3px rgba(247,211,122,.18)}
+    .overlay{
+      position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      padding:18px;pointer-events:auto;
+      background:radial-gradient(900px 700px at 50% 15%, rgba(255,215,160,.14) 0%, rgba(0,0,0,.45) 50%, rgba(0,0,0,.74) 100%);
+    }
+    .card{
+      width:min(560px, 92vw);
+      background:linear-gradient(180deg, rgba(255,255,255,.11), rgba(0,0,0,.48));
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:26px;
+      padding:18px 18px 16px;
+      box-shadow: 0 26px 80px rgba(0,0,0,.60);
+      backdrop-filter: blur(12px);
+      position:relative;
+      overflow:hidden;
+    }
+    .card:before{
+      content:"";position:absolute;inset:-2px;opacity:.60;
+      background:
+        radial-gradient(620px 200px at 50% 0%, rgba(247,211,122,.40), transparent 65%),
+        radial-gradient(520px 240px at 0% 30%, rgba(255,77,77,.24), transparent 70%),
+        radial-gradient(520px 240px at 100% 30%, rgba(255,77,77,.20), transparent 70%);
+      pointer-events:none;
+    }
+    .title{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .title h1{margin:0;font-size:22px;letter-spacing:.02em}
+    .subtitle{position:relative;margin-top:6px;color:var(--muted);font-size:13px;line-height:1.7}
+    .rules{position:relative;margin:12px 0 10px;padding:12px;border-radius:18px;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.10)}
+    .rules ul{margin:0;padding-left:18px;color:var(--muted);font-size:13px;line-height:1.9}
+    .grid{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+    .stat{background:rgba(0,0,0,.20);border:1px solid rgba(255,255,255,.10);border-radius:18px;padding:12px}
+    .stat .k{font-size:11px;color:var(--muted2);letter-spacing:.10em}
+    .stat .v{font-size:20px;font-weight:950;margin-top:2px}
+    .footer{position:relative;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.10);color:var(--muted);font-size:12px;line-height:1.7}
+    .footer b{color:#fff}
+    .row{position:relative;display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .toast{
+      position:absolute;left:50%;transform:translateX(-50%);
+      bottom:96px;min-width:220px;max-width:86vw;
+      background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.14);
+      padding:10px 12px;border-radius:16px;color:#fff;font-size:13px;
+      backdrop-filter: blur(10px);
+      opacity:0;transition:opacity .18s ease, transform .18s ease;
+      pointer-events:none;
+    }
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+    .hint{position:absolute;top:58px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.75);font-size:12px;letter-spacing:.08em;text-align:center;padding:0 10px}
+    .comboBarWrap{
+      position:absolute;left:14px;right:14px;top:86px;height:10px;
+      background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.10);
+      border-radius:999px;overflow:hidden;pointer-events:none;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.18);
+    }
+    .comboBar{
+      height:100%;width:0%;
+      background:linear-gradient(90deg, rgba(247,211,122,.9), rgba(255,77,77,.75));
+      border-radius:999px;
+      box-shadow: 0 0 18px rgba(247,211,122,.30);
+      transition:width .08s linear;
+    }
+    .badge{
+      position:absolute;left:50%;transform:translateX(-50%);
+      top:104px;font-size:11px;color:rgba(255,255,255,.75);
+      letter-spacing:.08em;pointer-events:none;
+    }
+    .hide{display:none !important;}
+  </style>
 </head>
 <body>
-<div id="app">
-  <header>
-    <div class="brand">
-      <div class="t">⛳ 馬年球道衝刺 <span style="font-weight:800;color:var(--muted);font-size:12px;">60s</span></div>
-      <div class="tag">拖曳左右推球（無段式）｜紅包、球旗加分｜撞障礙不會結束但會扣分/降速</div>
-    </div>
-    <div class="hud">
-      <div class="pill">Distance <b id="uiDist">0</b><span class="u">m</span></div>
-      <div class="pill">Score <b id="uiScore">0</b></div>
-      <div class="pill">Time <b id="uiTime">60.0</b><span class="u">s</span></div>
-    </div>
-  </header>
+  <div id="wrap">
+    <canvas id="c"></canvas>
 
-  <main>
-    <canvas id="c" aria-label="Golf runner canvas"></canvas>
-    <div class="toast" id="toast">已複製分享文字 ✅</div>
-
-    <div class="overlay" id="startOverlay">
-      <div class="card">
-        <h1>馬年開球，往前衝</h1>
-        <p>先看 2 秒「擊球開場」，接著你要控制球在球道上衝刺 60 秒。<br>
-        <strong>紅包</strong>連吃會有連擊加成；<strong>球旗</strong>是高分稀有道具。</p>
-        <div class="row">
-          <button class="primary" id="btnStart">▶ 開始</button>
-          <button class="ghost" id="btnHow">操作提示</button>
+    <div class="ui">
+      <div class="hud">
+        <div class="pill big">
+          <div class="k">時間</div>
+          <div class="v" id="timeV">60.0</div>
         </div>
-        <p class="hint">手感：偏靈敏（A）｜用拇指在畫面下半部左右拖曳。</p>
+        <div class="right">
+          <div class="pill">
+            <div class="k">分數</div>
+            <div class="v" id="scoreV">0</div>
+          </div>
+          <div class="pill">
+            <div class="k">COMBO</div>
+            <div class="v" id="comboV">x1</div>
+          </div>
+          <button class="btn small" id="soundBtn" title="音效" style="pointer-events:auto">
+            <span class="iconDot"></span><span id="soundLbl">音效：開</span>
+          </button>
+        </div>
       </div>
-    </div>
 
-    <div class="overlay" id="endOverlay" style="display:none;">
-      <div class="card">
-        <h1>完成 60 秒</h1>
-        <p style="margin-top:6px;">留下成績（Firebase 版會上傳到 Top 100 排行榜）</p>
+      <div class="comboBarWrap"><div class="comboBar" id="comboBar"></div></div>
+      <div class="badge" id="badge">搶紅包：連擊升倍率</div>
 
-        <div class="grid2">
-          <div class="stat"><div class="k">Final Score</div><div class="v" id="endScore">0</div></div>
-          <div class="stat"><div class="k">Distance</div><div class="v"><span id="endDist">0</span> m</div></div>
-        </div>
+      <div class="hint" id="hint">直接點畫面物件搶分：🧧/🪙/🏮/🦁 加分｜👹/💣 扣分斷連擊｜空點會扣分｜偶爾掉下 ✨超大紅包✨</div>
+<div class="toast" id="toast"></div>
 
-        <div class="field">
-          <label>暱稱（8 字內）</label>
-          <input id="inpName" maxlength="8" placeholder="例如：阿凱">
-        </div>
+      <div class="overlay" id="startOverlay">
+        <div class="card">
+          <div class="title">
+            <h1>搶紅包快閃</h1>
+            <div style="font-size:12px;color:var(--muted2);text-align:right">
+              60 秒衝榜<br><span style="color:var(--gold)">連擊</span> 加倍率
+            </div>
+          </div>
+          <div class="subtitle">
+            紅包雨來了！用手指去「點」畫面上的物件搶分。<br>
+            <span style="color:var(--muted2)">提示：亂點會降倍率；看到 ✨超大紅包✨ 別猶豫！</span>
+          </div>
 
-        <div class="field">
-          <label>祝福語（必填，18 字內）</label>
-          <textarea id="inpBless" maxlength="18" placeholder="例如：步伐不急，方向正確"></textarea>
-          <div class="chips" id="chipRow">
-            <div class="chip">慢慢跑，也會跑得遠</div>
-            <div class="chip">穩穩向前，好事發生</div>
-            <div class="chip">一路開球，一路順心</div>
-            <div class="chip">馬年順行，天天好球</div>
-            <div class="chip">步伐不急，方向正確</div>
+          <div class="rules">
+            <ul>
+              <li>加分：🧧紅包、🪙元寶、🏮燈籠、🦁舞獅（連擊升倍率）</li>
+              <li>扣分：👹年獸、💣炸彈（扣分＋斷 Combo）</li>
+              <li>連續空點：扣分（倍率不變）</li>
+              <li>稀有：✨超大紅包✨ 出現很短，點到大加分！</li>
+            </ul>
+          </div>
+
+          <div class="row">
+            <button class="btn primary" id="startBtn">開始遊戲</button>
+            <button class="btn" id="howBtn">我怎麼玩？</button>
+          </div>
+
+          <div class="footer">
+            <div><b id="companyName">弘騏興業有限公司</b> ｜ <span id="blessing">新年快樂・Balance &amp; Peace</span></div>
+            <div style="color:var(--muted2);margin-top:4px">（可群發：同一個連結所有人都能玩）</div>
           </div>
         </div>
+      </div>
 
-        <div class="row">
-          <button class="primary" id="btnRestart">↻ 再跑一次</button>
-          <button class="ghost" id="btnShare">📤 分享成績</button>
+      <div class="overlay hide" id="endOverlay">
+        <div class="card">
+          <div class="title">
+            <h1>成績結算</h1>
+            <div style="font-size:12px;color:var(--muted2);text-align:right">
+              搶到多少看你了<br><span style="color:var(--gold)">恭喜發財</span>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="stat">
+              <div class="k">本次分數</div>
+              <div class="v" id="finalScore">0</div>
+            </div>
+            <div class="stat">
+              <div class="k">最高倍率</div>
+              <div class="v" id="finalMult">x1</div>
+            </div>
+            <div class="stat">
+              <div class="k">Perfect 次數</div>
+              <div class="v" id="finalPerfect">0</div>
+            </div>
+            <div class="stat">
+              <div class="k">本機最高分</div>
+              <div class="v" id="bestScore">0</div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:14px">
+            <button class="btn primary" id="retryBtn">再玩一次</button>
+            <button class="btn" id="shareBtn">分享成績（複製）</button>
+            <button class="btn" id="shareCardBtn">分享成績卡（下載PNG）</button>
+          </div>
+
+          <div class="footer">
+            <div><b id="companyName2">弘騏興業有限公司</b> ｜ <span id="blessing2">新年快樂・Balance &amp; Peace</span></div>
+            <div style="color:var(--muted2);margin-top:4px">把成績貼到 LINE 群組就能比高分。</div>
+          </div>
         </div>
+      </div>
 
-        <div class="cardFooterBlessing">
-          <div>願您這一年<br>步伐不急，方向正確</div>
-          <div class="company">— 弘騏興業有限公司</div>
+      <div class="overlay hide" id="howOverlay">
+        <div class="card">
+          <div class="title">
+            <h1>快速教學</h1>
+            <button class="btn small" id="closeHow" style="pointer-events:auto">關閉</button>
+          </div>
+          <div class="rules" style="margin-top:12px">
+            <ul>
+              <li>直接點畫面上的物件（不用按按鈕）</li>
+              <li>🧧/🪙/🏮/🦁 加分並疊倍率</li>
+              <li>👹/💣 扣分並斷 Combo</li>
+              <li><b>連續空點會扣分</b>（防亂點）</li>
+              <li>✨超大紅包✨ 出現很短，點到大加分＋特效</li>
+            </ul>
+          </div>
+          <div class="row">
+            <button class="btn primary" id="closeHow2">我懂了</button>
+          </div>
         </div>
       </div>
     </div>
-  </main>
-
-  <footer>
-    <div class="footerLeft">
-      <div class="hint">玩法：拖曳左右推球（無段式）｜鬆手回正｜可按 <code>R</code> 重開</div>
-      <div class="hint">障礙：沙坑=降速｜樹叢=彈飛｜水池=重罰（不結束）</div>
-    </div>
-    <div class="footerBtns">
-      <button class="ghost" id="btnPause">⏸ 暫停</button>
-      <button class="ghost" id="btnReset">🧹 重置</button>
-    </div>
-  </footer>
-</div>
+  </div>
 
 <script>
-(() => {
-  const CFG = {
-    duration: 60.0,
-    v0: 8.2, vMax: 18.8, accelTime: 42.0,
+/* =========================
+   CONFIG（你可改的地方）
+========================= */
+const CONFIG = {
+  durationSec: 60,
 
-    // A：靈敏
-    lateralMax: 1.0,
-    lateralAccel: 18.0,
-    lateralDamp: 13.5,
-    returnForce: 6.0,
+  // 倍率：每 stepEvery 次「加分命中」升級
+  combo: { stepEvery: 4, multipliers: [1,2,3,4,6] },
 
-    viewDist: 74,
-    spawnEvery: 0.54,
-    spawnJitter: 0.26,
+  // 同時存在上限（會隨時間提升）
+  maxAlive: { early: 3, mid: 4, late: 6 },
 
-    collideZ: 2.4,
+  // 生成間隔（秒）範圍：越後面越快
+  spawn: {
+    early: {min: 0.42, max: 0.75},
+    mid:   {min: 0.32, max: 0.62},
+    late:  {min: 0.24, max: 0.48},
+  },
 
-    scorePerMeter: 5,
-    giftScore: 260,
-    flagScore: 920,
-    comboWindow: 1.2,
-    comboMax: 6,
+  // 物件存活時間（秒）
+  ttl: {
+    early: {min: 0.95, max: 1.25},
+    mid:   {min: 0.78, max: 1.05},
+    late:  {min: 0.62, max: 0.92},
 
-    sandSlowMul: 0.55,
-    sandSlowTime: 1.0,
-    waterSlowMul: 0.38,
-    waterSlowTime: 1.45,
-    bushPush: 0.9,
-    scoreHitPenalty: 190,
-  };
+    // 稀有超大紅包：出現很短
+    super: {min: 0.38, max: 0.55},
+  },
 
-  // DOM
-  const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d', { alpha: false });
-  ctx.imageSmoothingEnabled = true;
+  // 物件權重（越大越常出現）
+  weights: {
+    hongbao: 55,
+    yuanbao: 10,
+    lantern: 12,
+    lion: 6,
+    nian: 10,
+    bomb: 7,
 
-  const uiDist = document.getElementById('uiDist');
-  const uiScore = document.getElementById('uiScore');
-  const uiTime = document.getElementById('uiTime');
+    // 超大紅包（稀有）
+    super_hongbao: 2,
+  },
 
-  const startOverlay = document.getElementById('startOverlay');
-  const endOverlay = document.getElementById('endOverlay');
-  const endScore = document.getElementById('endScore');
-  const endDist = document.getElementById('endDist');
+  // 分數（加分會乘倍率；扣分不乘倍率）
+  points: {
+    hongbao: 60,
+    yuanbao: 140,
+    lantern: 110,
+    lion: 180,
+    super_hongbao: 420,
 
-  const btnStart = document.getElementById('btnStart');
-  const btnHow = document.getElementById('btnHow');
-  const btnPause = document.getElementById('btnPause');
-  const btnReset = document.getElementById('btnReset');
-  const btnRestart = document.getElementById('btnRestart');
-  const btnShare = document.getElementById('btnShare');
+    nian: -140,
+    bomb: -220,
+  },
 
-  const inpName = document.getElementById('inpName');
-  const inpBless = document.getElementById('inpBless');
-  const chipRow = document.getElementById('chipRow');
-  const toast = document.getElementById('toast');
+  // 空點懲罰：在空白處連點達 threshold 次，扣 comboGoodTotal 進度（至少不低於 0）
+  emptyPenalty: {
+    windowSec: 1.2,      // 判定連續空點的時間窗
+    threshold: 3,        // 連續空點次數
+    scorePenalty: -120,  // 觸發時扣分（不影響倍率）
+  },
 
-  // chips
-  chipRow.addEventListener('click', (e)=>{
-    const t = e.target;
-    if (t && t.classList.contains('chip')){
-      inpBless.value = t.textContent.trim();
-      showToast('已填入祝福語 ✨');
-    }
+  // 署名
+  companyName: "弘騏興業有限公司",
+  blessing: "新年快樂・Balance & Peace",
+  gameTitle: "搶紅包快閃",
+};
+
+/* =========================
+   Utilities
+========================= */
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rand=(a,b)=>a+Math.random()*(b-a);
+const now=()=>performance.now()/1000;
+const fmt1=n=>(Math.round(n*10)/10).toFixed(1);
+const fmtInt=n=>Math.round(n).toString();
+function haptic(ms=12){ if(navigator.vibrate) navigator.vibrate(ms); }
+
+/* =========================
+   DOM
+========================= */
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+
+const timeV=document.getElementById('timeV');
+const scoreV=document.getElementById('scoreV');
+const comboV=document.getElementById('comboV');
+const comboBar=document.getElementById('comboBar');
+const badge=document.getElementById('badge');
+
+const toast=document.getElementById('toast');
+const hint=document.getElementById('hint');
+
+const startOverlay=document.getElementById('startOverlay');
+const endOverlay=document.getElementById('endOverlay');
+const howOverlay=document.getElementById('howOverlay');
+
+const startBtn=document.getElementById('startBtn');
+const howBtn=document.getElementById('howBtn');
+const closeHow=document.getElementById('closeHow');
+const closeHow2=document.getElementById('closeHow2');
+
+const retryBtn=document.getElementById('retryBtn');
+const shareBtn=document.getElementById('shareBtn');
+const shareCardBtn=document.getElementById('shareCardBtn');
+const soundBtn=document.getElementById('soundBtn');
+const soundLbl=document.getElementById('soundLbl');
+
+const finalScore=document.getElementById('finalScore');
+const finalMult=document.getElementById('finalMult');
+const finalPerfect=document.getElementById('finalPerfect');
+const bestScoreEl=document.getElementById('bestScore');
+
+document.getElementById('companyName').textContent=CONFIG.companyName;
+document.getElementById('companyName2').textContent=CONFIG.companyName;
+document.getElementById('blessing').textContent=CONFIG.blessing;
+document.getElementById('blessing2').textContent=CONFIG.blessing;
+
+/* =========================
+   Audio (tiny synth)
+========================= */
+let audioOn=true;
+let ac=null;
+function beep(type='ok'){
+  if(!audioOn) return;
+  try{
+    if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)();
+    const t0=ac.currentTime;
+    const o=ac.createOscillator();
+    const g=ac.createGain();
+    o.type = type==='bad' ? 'triangle' : 'sine';
+    const f = type==='super'?1020 : type==='good'?900 : type==='bad'?220 : 650;
+    o.frequency.setValueAtTime(f,t0);
+    g.gain.setValueAtTime(0.0001,t0);
+    g.gain.exponentialRampToValueAtTime(type==='bad'?0.14:0.22,t0+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+0.14);
+    o.connect(g); g.connect(ac.destination);
+    o.start(t0); o.stop(t0+0.16);
+  }catch(e){}
+}
+
+/* =========================
+   Canvas sizing
+========================= */
+let W=0,H=0,dpr=1;
+function resize(){
+  dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  W=canvas.width=Math.floor(innerWidth*dpr);
+  H=canvas.height=Math.floor(innerHeight*dpr);
+  canvas.style.width=innerWidth+'px';
+  canvas.style.height=innerHeight+'px';
+  ctx.setTransform(1,0,0,1,0,0);
+}
+addEventListener('resize',resize); resize();
+
+/* =========================
+   Background: lanterns
+========================= */
+let lanterns=[];
+function initLanterns(){
+  lanterns=[];
+  const count=Math.round(clamp(innerWidth/115, 7, 15));
+  for(let i=0;i<count;i++){
+    lanterns.push({
+      x: rand(0,W), y: rand(0,H*0.56),
+      r: rand(10,18)*dpr, sway: rand(0.8,1.8),
+      phase: rand(0,Math.PI*2),
+      speed: rand(0.05,0.12), glow: rand(0.35,0.75),
+      depth: rand(0.6,1.0),
+    });
+  }
+}
+initLanterns(); addEventListener('resize',initLanterns);
+
+/* =========================
+   Entities + Particles
+========================= */
+let entities=[]; // {type,x,y,r,vx,vy,t,ttl,rot,isSuper}
+let sparks=[];   // particles
+let popups=[];   // floating text
+
+function seg(elapsed){
+  if(elapsed<20) return 'early';
+  if(elapsed<45) return 'mid';
+  return 'late';
+}
+function pickWeighted(){
+  const entries = Object.entries(CONFIG.weights);
+  const sum = entries.reduce((a,[,v])=>a+v,0);
+  let r = Math.random()*sum;
+  for(const [k,v] of entries){
+    r -= v;
+    if(r<=0) return k;
+  }
+  return 'hongbao';
+}
+
+function spawnEntity(elapsed){
+  const s = seg(elapsed);
+  const type = pickWeighted();
+  const isSuper = type==='super_hongbao';
+
+  const ttl = isSuper ? CONFIG.ttl.super : CONFIG.ttl[s];
+
+  // keep away from bottom button a bit
+  const safeBottom = 110*dpr;
+  const x = rand(70*dpr, W-70*dpr);
+  const y = rand(120*dpr, H - safeBottom);
+
+  const baseR = (
+    type==='lion'?48 :
+    type==='bomb'?44 :
+    type==='nian'?46 :
+    type==='yuanbao'?42 :
+    type==='lantern'?40 :
+    type==='super_hongbao'?62 :
+    44
+  ) * dpr;
+
+  const scale = rand(0.85, 1.18) * (type==='lion'?1.05: type==='super_hongbao'?1.08:1.0);
+  const vx = rand(-22,22)*dpr * (isSuper?0.65:1.0);
+  const vy = rand(-18,18)*dpr * (isSuper?0.65:1.0);
+
+  entities.push({
+    type, isSuper,
+    x, y,
+    r: baseR*scale,
+    vx, vy,
+    t: now(),
+    ttl: rand(ttl.min, ttl.max),
+    rot: rand(-0.25,0.25)
   });
+}
 
-  // helpers
-  const clamp = (v,a,b)=>Math.max(a, Math.min(b,v));
-  const lerp = (a,b,t)=>a+(b-a)*t;
-  const rand = (a,b)=>a+Math.random()*(b-a);
-
-  function showToast(msg){
-    toast.textContent = msg;
-    toast.classList.add('show');
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(()=>toast.classList.remove('show'), 1100);
+function addSparks(x,y,kind){
+  const n = kind==='super'?40 : kind==='good'?18:14;
+  for(let i=0;i<n;i++){
+    const a = rand(0,Math.PI*2);
+    const sp = rand(140, 560) * dpr * (kind==='super'?1.1:1.0);
+    sparks.push({x,y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, t:now(), life:rand(0.30,0.75), kind});
   }
+}
+function addPopup(x,y,text,kind){
+  popups.push({x,y,text,kind,t:now(),life:0.95});
+}
 
-  // resize
-  let W=360,H=640,DPR=1;
-  function resize(){
-    const r = canvas.getBoundingClientRect();
-    DPR = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = Math.floor(r.width * DPR);
-    canvas.height = Math.floor(r.height * DPR);
-    ctx.setTransform(DPR,0,0,DPR,0,0);
-    W = r.width; H = r.height;
+/* =========================
+   Game State
+========================= */
+const STATE={START:'start',PLAY:'play',END:'end'};
+let state=STATE.START;
+
+let tStart=0;
+let tLeft=CONFIG.durationSec;
+let score=0;
+
+let comboGoodTotal=0; // 用於升倍率的加分次數
+let maxMult=1;
+
+let goodHits=0;
+let badHits=0;
+let perfectHits=0;
+let okHits=0;
+let missHits=0;
+
+let nextSpawnAt=0;
+let screenShake=0;
+let flash=0;
+
+// 空點懲罰
+let emptyStreak=0;
+let lastEmptyAt=-999;
+
+const LS_KEY="hongbao_dash_best_v11";
+let best=Number(localStorage.getItem(LS_KEY)||0);
+
+function multiplier(){
+  const step = CONFIG.combo.stepEvery;
+  const idx = clamp(Math.floor(comboGoodTotal/step), 0, CONFIG.combo.multipliers.length-1);
+  return CONFIG.combo.multipliers[idx];
+}
+function updateComboUI(){
+  const step=CONFIG.combo.stepEvery;
+  const inStep = comboGoodTotal % step;
+  const pct = (inStep/step)*100;
+  comboBar.style.width = `${pct}%`;
+  badge.textContent = `倍率 x${multiplier()}｜再加分 ${step-inStep} 次升級`;
+  comboV.textContent = "x"+multiplier();
+  maxMult = Math.max(maxMult, multiplier());
+}
+
+function scheduleSpawn(elapsed){
+  const s=seg(elapsed);
+  const {min,max}=CONFIG.spawn[s];
+  nextSpawnAt = now() + rand(min,max);
+}
+function maxAlive(elapsed){
+  const s=seg(elapsed);
+  return CONFIG.maxAlive[s];
+}
+
+function showToast(msg, kind){
+  toast.textContent=msg;
+  toast.classList.add('show');
+  toast.style.borderColor = kind==='good' ? 'rgba(247,211,122,.35)' :
+                            kind==='bad' ? 'rgba(255,77,77,.35)' :
+                            'rgba(255,255,255,.18)';
+  clearTimeout(showToast._t);
+  showToast._t=setTimeout(()=>toast.classList.remove('show'),420);
+}
+
+function onGood(type, x, y, judgement="OK"){
+  const base = CONFIG.points[type];
+  const add = base * multiplier();
+  score += add;
+  goodHits++;
+  comboGoodTotal++;
+  emptyStreak=0;
+  updateComboUI();
+
+  const isSuper = (type==='super_hongbao');
+  const vfxKind = isSuper ? 'super' : 'good';
+
+  if(judgement==="Perfect") perfectHits++; else okHits++;
+
+  // VFX layers
+  addSparks(x,y, vfxKind);
+  if(judgement==="Perfect") addSparks(x,y, vfxKind);
+
+  // Text layers (Perfect/OK + score)
+  addPopup(x,y-22*dpr, judgement, isSuper?'super':(judgement==="Perfect"?'perfect':'good'));
+  addPopup(x,y+10*dpr, `+${add}`, isSuper?'super':'good');
+
+  haptic(isSuper?16:(judgement==="Perfect"?14:10));
+  beep(isSuper?'super':'good');
+
+  screenShake = Math.max(screenShake, isSuper?12:(judgement==="Perfect"?8:4));
+
+  // micro screen flash (for Perfect / Super)
+  if(isSuper || judgement==="Perfect") flash = Math.max(flash, isSuper?0.22:0.14);
+
+  showToast(isSuper ? "超大紅包！" : (judgement==="Perfect" ? "Perfect！" : "搶到！"), 'good');
+}
+
+function onBad(type, x, y, judgement="OK"){
+  const base = CONFIG.points[type]; // negative
+  score += base;
+  badHits++;
+  comboGoodTotal = 0;
+  emptyStreak=0;
+  updateComboUI();
+
+  if(judgement==="Perfect") perfectHits++; else okHits++;
+  addSparks(x,y,'bad');
+  if(judgement==="Perfect") addSparks(x,y,'bad'); // sharp hit on trap still pops harder
+
+  // Text layers (Perfect/OK + penalty)
+  addPopup(x,y-22*dpr, judgement, judgement==="Perfect"?'perfect':'bad');
+  addPopup(x,y+10*dpr, `${base}`, 'bad');
+
+  haptic(12);
+  beep('bad');
+  screenShake = Math.max(screenShake, 10);
+  flash = Math.max(flash, 0.10);
+
+  showToast(type==='bomb'?'爆了！':'被年獸陰了…','bad');
+}
+
+function applyEmptyPenalty(px,py){
+  const t=now();
+  const {windowSec, threshold, scorePenalty} = CONFIG.emptyPenalty;
+
+  if(t - lastEmptyAt <= windowSec) emptyStreak++;
+  else emptyStreak = 1;
+
+  lastEmptyAt = t;
+
+  addPopup(px,py,"MISS","miss");
+  missHits++;
+
+  if(emptyStreak >= threshold){
+    emptyStreak = 0;
+    score += scorePenalty; // 只扣分，不影響倍率
+    addSparks(px,py,'bad');
+    addPopup(px,py,`${scorePenalty}`,'bad');
+    showToast("亂點扣分",'bad');
+    haptic(10);
+    beep('bad');
+    screenShake = Math.max(screenShake, 6);
   }
-  new ResizeObserver(resize).observe(canvas);
-  window.addEventListener('resize', ()=>setTimeout(resize, 60));
-  window.addEventListener('orientationchange', ()=>setTimeout(resize, 140));
+}
 
-  // state
-  let running=false, paused=false;
-  let tLeft=CFG.duration;
-  let score=0, dist=0, v=CFG.v0;
-  let slowMul=1, slowT=0;
-
-  // lateral (continuous)
-  let x=0, vxLat=0;
-  let dragging=false, dragPrevX=0, dragPointerId=null;
-
-  // entities
-  let entities=[];
-  let spawnTimer=0;
-
-  // combo
-  let combo=1, bestCombo=1, lastGiftTime=-999;
-
-  // mode
-  let mode='start'; // start | swing | run | end
-  let swingT=0;
-
-  // input
-  function pointerDown(ev){
-    dragging = true;
-    dragPrevX = ev.clientX;
-    dragPointerId = ev.pointerId ?? null;
-    try{ canvas.setPointerCapture?.(ev.pointerId); }catch(_){}
-  }
-  function pointerMove(ev){
-    if (!dragging) return;
-    if (dragPointerId != null && ev.pointerId != null && ev.pointerId !== dragPointerId) return;
-    const dx = (ev.clientX - dragPrevX) / Math.max(220, W*0.6);
-    vxLat += dx * CFG.lateralAccel * 3.2;
-    dragPrevX = ev.clientX;
-  }
-  function pointerUp(ev){
-    if (dragPointerId != null && ev.pointerId != null && ev.pointerId !== dragPointerId) return;
-    dragging = false;
-    dragPointerId = null;
-  }
-  canvas.addEventListener('pointerdown', pointerDown, {passive:true});
-  window.addEventListener('pointermove', pointerMove, {passive:true});
-  window.addEventListener('pointerup', pointerUp, {passive:true});
-  window.addEventListener('pointercancel', pointerUp, {passive:true});
-
-  window.addEventListener('keydown', (e)=>{
-    const k = e.key.toLowerCase();
-    if (k === 'r'){ resetAll(); startOverlay.style.display='flex'; endOverlay.style.display='none'; mode='start'; }
-    if (k === ' '){ togglePause(); e.preventDefault(); }
-  }, {passive:false});
-
-  function updateUI(){
-    uiDist.textContent = String(Math.floor(dist));
-    uiScore.textContent = String(Math.max(0, Math.floor(score)));
-    uiTime.textContent = tLeft.toFixed(1);
-    btnPause.textContent = paused ? '▶ 繼續' : '⏸ 暫停';
-  }
-
-  // projection (isometric-lite)
-  function proj(zAhead){
-    const yFar = H*0.12;
-    const yNear = H*0.86;
-    const t = clamp(zAhead / CFG.viewDist, 0, 1);
-    const y = lerp(yNear, yFar, t);
-    const wNear = W*0.92;
-    const wFar  = W*0.30;
-    const w = lerp(wNear, wFar, t);
-    return { y, w, t };
-  }
-  function xToScreen(xNorm, zAhead){
-    const p = proj(zAhead);
-    return (W*0.5) + xNorm * (p.w * 0.5);
-  }
-
-  // drawing (cleaner flat style)
-  function drawSky(scroll){
-    const g = ctx.createLinearGradient(0,0,0,H);
-    g.addColorStop(0, '#dff6ff');
-    g.addColorStop(0.40, '#eaf7ef');
-    g.addColorStop(1, '#f7fffb');
-    ctx.fillStyle = g;
-    ctx.fillRect(0,0,W,H);
-
-    // soft clouds
-    ctx.globalAlpha = 0.22;
-    ctx.fillStyle = '#ffffff';
-    const cx = (scroll*0.20) % (W*0.9);
-    for(let i=-2;i<4;i++){
-      const x0 = i*(W*0.9) - cx;
-      const y0 = H*0.12 + (i%2)*10;
-      ctx.beginPath();
-      ctx.ellipse(x0 + 80, y0 + 10, 60, 18, 0, 0, Math.PI*2);
-      ctx.ellipse(x0 + 130, y0 + 14, 70, 22, 0, 0, Math.PI*2);
-      ctx.ellipse(x0 + 190, y0 + 10, 60, 18, 0, 0, Math.PI*2);
-      ctx.fill();
+function hitTest(px,py){
+  // return nearest hit + how close to center (for Perfect/OK)
+  let bestI = -1;
+  let bestD = 1e9;
+  let bestR = 1;
+  for(let i=0;i<entities.length;i++){
+    const e = entities[i];
+    const d = Math.hypot(px-e.x, py-e.y);
+    if(d <= e.r && d < bestD){
+      bestD = d;
+      bestI = i;
+      bestR = d / Math.max(1e-6, e.r); // 0=center, 1=edge
     }
-    ctx.globalAlpha = 1;
+  }
+  return { i: bestI, ratio: bestR };
+}
 
-    // distant hills
-    ctx.globalAlpha = 0.55;
-    ctx.fillStyle = '#bfead0';
-    ctx.beginPath();
-    ctx.moveTo(0, H*0.26);
-    ctx.quadraticCurveTo(W*0.18, H*0.18, W*0.36, H*0.25);
-    ctx.quadraticCurveTo(W*0.55, H*0.33, W*0.70, H*0.24);
-    ctx.quadraticCurveTo(W*0.86, H*0.15, W, H*0.22);
-    ctx.lineTo(W,0); ctx.lineTo(0,0); ctx.closePath();
-    ctx.fill();
-    ctx.globalAlpha = 1;
+function pointerToCanvas(e){
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * dpr;
+  const y = (e.clientY - rect.top) * dpr;
+  return {x,y};
+}
 
-    // tree line parallax
-    ctx.globalAlpha = 0.16;
-    ctx.fillStyle = '#1f7a3a';
-    const baseY = H*0.27;
-    const shift = (scroll*0.18) % (W*0.22);
-    for(let i=-2;i<10;i++){
-      const tx = i*(W*0.22) - shift;
-      ctx.beginPath();
-      ctx.ellipse(tx+20, baseY+10, 26, 12, 0, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath();
-      ctx.ellipse(tx+45, baseY+14, 18, 9, 0, 0, Math.PI*2); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
+function onTap(px,py){
+  if(state!==STATE.PLAY) return;
+
+  const res = hitTest(px,py);
+  if(res.i < 0){
+    applyEmptyPenalty(px,py);
+    return;
+  }
+  const ent = entities[res.i];
+  entities.splice(res.i,1);
+
+  // Judge quality by how close to the center you tapped
+  const judgement = (res.ratio <= 0.62) ? "Perfect" : "OK";
+
+  if(ent.type==='nian' || ent.type==='bomb'){
+    onBad(ent.type, ent.x, ent.y, judgement);
+  }else{
+    onGood(ent.type, ent.x, ent.y, judgement);
+  }
+}
+
+ /* =========================
+   Controls
+========================= */
+canvas.addEventListener('pointerdown', (e)=>{
+  const {x,y} = pointerToCanvas(e);
+  onTap(x,y);
+}, {passive:true});
+
+
+soundBtn.addEventListener('click', ()=>{
+  audioOn=!audioOn;
+  soundLbl.textContent=audioOn?"音效：開":"音效：關";
+  soundBtn.querySelector('.iconDot').style.opacity=audioOn?"1":".35";
+  if(audioOn) beep('good');
+});
+
+startBtn.addEventListener('click',()=>startGame());
+retryBtn.addEventListener('click',()=>startGame());
+howBtn.addEventListener('click',()=>howOverlay.classList.remove('hide'));
+closeHow.addEventListener('click',()=>howOverlay.classList.add('hide'));
+closeHow2.addEventListener('click',()=>howOverlay.classList.add('hide'));
+
+shareBtn.addEventListener('click',async ()=>{
+  const msg=buildShareText();
+  await copyText(msg);
+  showToast("已複製，可貼到 LINE 群",'good');
+});
+shareCardBtn.addEventListener('click', async ()=>{
+  const url = renderShareCardPNG();
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = "hongbao_dash_score.png";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("已下載成績卡 PNG",'good');
+});
+
+async function copyText(msg){
+  try{
+    await navigator.clipboard.writeText(msg);
+  }catch(e){
+    const ta=document.createElement('textarea');
+    ta.value=msg; ta.style.position='fixed'; ta.style.left='-9999px';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); } catch(err){ alert(msg); }
+    document.body.removeChild(ta);
+  }
+}
+function buildShareText(){
+  const title=`我在《${CONFIG.gameTitle}》搶到 ${fmtInt(score)} 分！`;
+  const detail=`Perfect ${perfectHits} 次｜加分 ${goodHits}｜扣分 ${badHits}｜最高倍率 x${maxMult}`;
+  const wish=`${CONFIG.companyName}｜${CONFIG.blessing}`;
+  const link=(location.href && location.href.startsWith('http')) ? `\n一起玩：${location.href}` : "";
+  return `${title}\n${detail}\n${wish}${link}`;
+}
+
+/* =========================
+   Flow
+========================= */
+function startGame(){
+  state=STATE.PLAY;
+  startOverlay.classList.add('hide');
+  endOverlay.classList.add('hide');
+  howOverlay.classList.add('hide');
+
+  score=0;
+  comboGoodTotal=0; maxMult=1;
+  goodHits=0; badHits=0;
+  perfectHits=0; okHits=0; missHits=0;
+  emptyStreak=0; lastEmptyAt=-999;
+
+  entities=[]; sparks=[]; popups=[];
+  screenShake=0;
+
+  tStart=now();
+  tLeft=CONFIG.durationSec;
+  scheduleSpawn(0);
+  updateComboUI();
+}
+function endGame(){
+  state=STATE.END;
+
+  best=Math.max(best, Math.round(score));
+  localStorage.setItem(LS_KEY,String(best));
+
+  finalScore.textContent=fmtInt(score);
+  finalMult.textContent="x"+maxMult;
+  finalPerfect.textContent=`${perfectHits}`;
+  bestScoreEl.textContent=fmtInt(best);
+
+  endOverlay.classList.remove('hide');
+}
+
+/* =========================
+   Render
+========================= */
+function drawBackground(t){
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,"#2a0f0f");
+  g.addColorStop(0.55,"#120909");
+  g.addColorStop(1,"#070404");
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  // street block
+  ctx.save();
+  ctx.globalAlpha=0.70;
+  ctx.fillStyle="rgba(0,0,0,.56)";
+  ctx.fillRect(0,H*0.62,W,H*0.38);
+  ctx.restore();
+
+  // lanterns
+  for(const L of lanterns){
+    const sway=Math.sin(t*L.speed+L.phase)*L.sway*dpr*L.depth;
+    const x=L.x+sway;
+    const y2=L.y+Math.cos(t*L.speed*0.9+L.phase)*2*dpr*L.depth;
+
+    ctx.strokeStyle="rgba(255,255,255,.12)";
+    ctx.lineWidth=2*dpr*L.depth;
+    ctx.beginPath(); ctx.moveTo(x,y2-20*dpr*L.depth); ctx.lineTo(x,y2-L.r); ctx.stroke();
+
+    const rg=ctx.createRadialGradient(x,y2,L.r*0.4,x,y2,L.r*2.6);
+    rg.addColorStop(0,`rgba(247,211,122,${0.20+L.glow*0.28})`);
+    rg.addColorStop(1,"rgba(247,211,122,0)");
+    ctx.fillStyle=rg;
+    ctx.beginPath(); ctx.arc(x,y2,L.r*2.6,0,Math.PI*2); ctx.fill();
+
+    ctx.fillStyle="rgba(255,77,77,.90)";
+    ctx.beginPath(); ctx.ellipse(x,y2,L.r*0.9,L.r*1.18,0,0,Math.PI*2); ctx.fill();
+  }
+}
+
+function drawEntity(e, t){
+  const age = t - e.t;
+  const lifeLeft = Math.max(0, e.ttl - age);
+
+  // appear / disappear (punchy)
+  const appear = clamp(age/0.12, 0, 1);
+  const vanish = clamp(lifeLeft/0.18, 0, 1);
+  const vis = appear * vanish;
+
+  // slight float
+  const bob = Math.sin(age*6 + e.x*0.001)*3*dpr;
+  const x = e.x;
+  const y = e.y + bob;
+
+  const isBad = (e.type==='nian' || e.type==='bomb');
+  const isSuper = (e.type==='super_hongbao');
+
+  // glow
+  const glowR = e.r*(isSuper?2.3:1.9);
+  const glow = ctx.createRadialGradient(x,y, e.r*0.2, x,y, glowR);
+  glow.addColorStop(0, isSuper ? `rgba(255,255,255,${0.18*vis})` :
+                    isBad ? `rgba(255,77,77,${0.22*vis})` : `rgba(247,211,122,${0.22*vis})`);
+  glow.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(x,y,glowR,0,Math.PI*2); ctx.fill();
+
+  ctx.save();
+  ctx.globalAlpha = vis;
+  ctx.translate(x,y);
+  ctx.rotate(e.rot);
+
+  // ring hint
+  ctx.save();
+  ctx.globalAlpha = isSuper ? 0.34 : 0.18;
+  ctx.strokeStyle = isSuper ? "rgba(255,255,255,.95)" : isBad ? "rgba(255,77,77,.9)" : "rgba(247,211,122,.9)";
+  ctx.lineWidth = (isSuper?3:2)*dpr;
+  ctx.beginPath(); ctx.arc(0,0,e.r,0,Math.PI*2); ctx.stroke();
+  ctx.restore();
+
+  // ---------- helpers ----------
+  function shadowCircle(r, a=0.25){
+    ctx.save();
+    ctx.globalAlpha *= a;
+    ctx.fillStyle="rgba(0,0,0,.65)";
+    ctx.beginPath(); ctx.ellipse(0, e.r*0.72, r*1.1, r*0.45, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  function sparkle(){
+    ctx.save();
+    ctx.globalAlpha*=0.9;
+    ctx.fillStyle="rgba(255,255,255,.95)";
+    ctx.font = `${Math.round(22*dpr)}px ui-sans-serif, system-ui`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText("✨", -e.r*0.58, -e.r*0.75);
+    ctx.fillText("✨",  e.r*0.58, -e.r*0.75);
+    ctx.restore();
   }
 
-  function drawCourse(scroll){
-    // rough
-    ctx.fillStyle = '#cfeeda';
-    ctx.fillRect(0,0,W,H);
-
-    // fairway trapezoid
-    const pFar = proj(CFG.viewDist);
-    const pNear = proj(0);
-    const cx = W*0.5;
-
-    const farL = cx - pFar.w*0.5, farR = cx + pFar.w*0.5;
-    const nearL = cx - pNear.w*0.5, nearR = cx + pNear.w*0.5;
-
-    // fairway gradient
-    const fwG = ctx.createLinearGradient(0, pFar.y, 0, pNear.y);
-    fwG.addColorStop(0, '#58c972');
-    fwG.addColorStop(1, '#39aa57');
-    ctx.fillStyle = fwG;
-    ctx.beginPath();
-    ctx.moveTo(farL, pFar.y);
-    ctx.lineTo(farR, pFar.y);
-    ctx.lineTo(nearR, pNear.y);
-    ctx.lineTo(nearL, pNear.y);
-    ctx.closePath();
-    ctx.fill();
-
-    // stripes (less noisy)
-    const stripeCount = 10;
-    const phase = (scroll*0.06) % 1;
-    for(let i=0;i<stripeCount;i++){
-      const t0 = (i/stripeCount);
-      const t1 = ((i+1)/stripeCount);
-
-      const tz0 = ((t0 + phase) % 1) * CFG.viewDist;
-      const tz1 = ((t1 + phase) % 1) * CFG.viewDist;
-
-      const a = proj(tz0), b = proj(tz1);
-      const xa1 = cx - a.w*0.5, xa2 = cx + a.w*0.5;
-      const xb1 = cx - b.w*0.5, xb2 = cx + b.w*0.5;
-
-      ctx.globalAlpha = (i%2===0) ? 0.10 : 0.04;
-      ctx.fillStyle = '#0b2b16';
-      ctx.beginPath();
-      ctx.moveTo(xa1, a.y);
-      ctx.lineTo(xa2, a.y);
-      ctx.lineTo(xb2, b.y);
-      ctx.lineTo(xb1, b.y);
-      ctx.closePath();
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-
-    // center line & edges
-    ctx.strokeStyle = 'rgba(255,255,255,0.28)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, pFar.y);
-    ctx.lineTo(cx, pNear.y);
-    ctx.stroke();
-
-    ctx.globalAlpha = 0.30;
-    ctx.strokeStyle = 'rgba(255,255,255,0.24)';
-    ctx.beginPath(); ctx.moveTo(farL, pFar.y); ctx.lineTo(nearL, pNear.y); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(farR, pFar.y); ctx.lineTo(nearR, pNear.y); ctx.stroke();
-    ctx.globalAlpha = 1;
-  }
-
-  function drawSpeedStreaks(){
-    // subtle streaks near bottom when speed high
-    const sr = clamp(v/CFG.vMax, 0, 1);
-    if (sr < 0.55) return;
-    const n = Math.floor(lerp(0, 14, (sr-0.55)/0.45));
-    ctx.globalAlpha = 0.10 + (sr-0.55)*0.18;
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    for(let i=0;i<n;i++){
-      const x0 = rand(0, W);
-      const y0 = rand(H*0.55, H*0.92);
-      const len = rand(20, 70) * sr;
-      ctx.beginPath();
-      ctx.moveTo(x0, y0);
-      ctx.lineTo(x0, y0 + len);
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  function drawBall(){
-    const py = proj(0).y;
-    const px = xToScreen(x, 0);
-    const sr = clamp(v/CFG.vMax, 0, 1);
-
-    // shadow
-    ctx.globalAlpha = 0.16 + sr*0.12;
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.ellipse(px+6, py+18, 18 + sr*10, 7 + sr*2, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-
-    // outline
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = 'rgba(11,43,22,.15)';
+  // ---------- draw per type ----------
+  if(e.type==='nian'){
+    // Custom "年獸" face: cute-fierce (Q)
+    const r = e.r;
+    shadowCircle(r*0.55, 0.22);
 
     // body
-    const r = 14;
-    const ballG = ctx.createRadialGradient(px-6, py-8, 2, px, py, 18);
-    ballG.addColorStop(0, '#ffffff');
-    ballG.addColorStop(0.55, '#eef2f5');
-    ballG.addColorStop(1, '#cbd3da');
-    ctx.fillStyle = ballG;
+    const bodyGrad = ctx.createRadialGradient(-r*0.25,-r*0.35,r*0.2,0,0,r*1.2);
+    bodyGrad.addColorStop(0,'rgba(255,140,140,.98)');
+    bodyGrad.addColorStop(1,'rgba(170,35,35,.98)');
+    ctx.fillStyle = bodyGrad;
+    ctx.beginPath(); ctx.arc(0,0,r*0.95,0,Math.PI*2); ctx.fill();
+
+    // horns
+    ctx.fillStyle='rgba(255,225,165,.98)';
     ctx.beginPath();
-    ctx.arc(px, py, r, 0, Math.PI*2);
+    ctx.moveTo(-r*0.55,-r*0.65); ctx.quadraticCurveTo(-r*0.85,-r*0.95,-r*0.65,-r*0.25);
+    ctx.quadraticCurveTo(-r*0.40,-r*0.45,-r*0.55,-r*0.65); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(r*0.55,-r*0.65); ctx.quadraticCurveTo(r*0.85,-r*0.95,r*0.65,-r*0.25);
+    ctx.quadraticCurveTo(r*0.40,-r*0.45,r*0.55,-r*0.65); ctx.fill();
+
+    // eyes
+    ctx.fillStyle='rgba(0,0,0,.88)';
+    ctx.beginPath(); ctx.ellipse(-r*0.26,-r*0.12,r*0.16,r*0.18,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(r*0.26,-r*0.12,r*0.16,r*0.18,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.95)';
+    ctx.beginPath(); ctx.arc(-r*0.21,-r*0.18,r*0.05,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(r*0.21,-r*0.18,r*0.05,0,Math.PI*2); ctx.fill();
+
+    // brows
+    ctx.strokeStyle='rgba(0,0,0,.60)';
+    ctx.lineWidth=6*dpr;
+    ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-r*0.44,-r*0.34); ctx.lineTo(-r*0.10,-r*0.26); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(r*0.44,-r*0.34); ctx.lineTo(r*0.10,-r*0.26); ctx.stroke();
+
+    // mouth
+    ctx.fillStyle='rgba(30,0,0,.72)';
+    ctx.beginPath(); ctx.ellipse(0,r*0.25,r*0.34,r*0.22,0,0,Math.PI*2); ctx.fill();
+
+    // fangs
+    ctx.fillStyle='rgba(255,255,255,.96)';
+    ctx.beginPath(); ctx.moveTo(-r*0.14,r*0.16); ctx.lineTo(-r*0.06,r*0.32); ctx.lineTo(-r*0.22,r*0.30); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(r*0.14,r*0.16); ctx.lineTo(r*0.06,r*0.32); ctx.lineTo(r*0.22,r*0.30); ctx.closePath(); ctx.fill();
+
+    // cheeks
+    ctx.fillStyle='rgba(255,205,205,.28)';
+    ctx.beginPath(); ctx.arc(-r*0.45,r*0.05,r*0.18,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(r*0.45,r*0.05,r*0.18,0,Math.PI*2); ctx.fill();
+  }
+  else if(e.type==='hongbao'){
+    const r=e.r;
+    shadowCircle(r*0.55,0.18);
+
+    // body
+    const g1=ctx.createLinearGradient(0,-r,0,r);
+    g1.addColorStop(0,'rgba(255,110,110,.98)');
+    g1.addColorStop(1,'rgba(210,35,35,.98)');
+    ctx.fillStyle=g1;
+    roundRect(ctx, -r*0.62, -r*0.72, r*1.24, r*1.38, r*0.26);
     ctx.fill();
+
+    // border
+    ctx.lineWidth=4*dpr;
+    ctx.strokeStyle='rgba(255,220,160,.55)';
     ctx.stroke();
 
-    // dimples
-    ctx.globalAlpha = 0.09;
-    ctx.fillStyle = '#7a8792';
-    for(let i=0;i<12;i++){
-      const a = i*0.52 + (dist*0.11);
-      ctx.beginPath();
-      ctx.arc(px + Math.cos(a)*8, py + Math.sin(a)*6, 1.1, 0, Math.PI*2);
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
+    // golden seal
+    const g2=ctx.createRadialGradient(-r*0.12,-r*0.08,r*0.08,0,0,r*0.38);
+    g2.addColorStop(0,'rgba(255,240,200,.98)');
+    g2.addColorStop(1,'rgba(247,211,122,.95)');
+    ctx.fillStyle=g2;
+    ctx.beginPath(); ctx.arc(0,0,r*0.28,0,Math.PI*2); ctx.fill();
 
-    // highlight
-    ctx.globalAlpha = 0.70;
-    ctx.fillStyle = 'rgba(255,255,255,0.92)';
-    ctx.beginPath();
-    ctx.ellipse(px-5, py-7, 6, 4, -0.5, 0, Math.PI*2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  }
-
-  function drawEntity(e){
-    const p = proj(e.z);
-    const px = xToScreen(e.x, e.z);
-    const py = p.y;
-    const scale = lerp(1.10, 0.50, clamp(e.z/CFG.viewDist,0,1));
-
-    if (e.type === 'gift'){
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.scale(scale, scale);
-      ctx.rotate(Math.sin((performance.now()/220)+e.w)*0.10);
-
-      // card base
-      ctx.fillStyle = '#e94b5a';
-      ctx.strokeStyle = 'rgba(11,43,22,.18)';
-      ctx.lineWidth = 2;
-      rr(-14, -10, 28, 20, 6);
-      ctx.fill(); ctx.stroke();
-
-      // fold
-      ctx.fillStyle = 'rgba(255,255,255,.32)';
-      ctx.beginPath();
-      ctx.moveTo(-14, -10);
-      ctx.lineTo(0, 0);
-      ctx.lineTo(14, -10);
-      ctx.closePath();
-      ctx.fill();
-
-      // seal
-      ctx.fillStyle = '#d3b24a';
-      ctx.beginPath();
-      ctx.arc(0, 4, 3.2, 0, Math.PI*2);
-      ctx.fill();
-
-      ctx.restore();
-      return;
-    }
-
-    if (e.type === 'flag'){
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.scale(scale, scale);
-
-      ctx.strokeStyle = 'rgba(11,43,22,.62)';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(0, 14);
-      ctx.lineTo(0, -14);
-      ctx.stroke();
-
-      ctx.fillStyle = '#ffffff';
-      ctx.globalAlpha = 0.96;
-      ctx.beginPath();
-      ctx.moveTo(0, -14);
-      ctx.lineTo(16, -10);
-      ctx.lineTo(0, -6);
-      ctx.closePath();
-      ctx.fill();
-      ctx.globalAlpha = 1;
-
-      ctx.fillStyle = '#d3b24a';
-      ctx.beginPath();
-      ctx.arc(0, 14, 6, 0, Math.PI*2);
-      ctx.fill();
-
-      ctx.restore();
-      return;
-    }
-
-    if (e.type === 'sand'){
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.scale(scale, scale);
-
-      ctx.fillStyle = '#f2d38d';
-      ctx.strokeStyle = 'rgba(11,43,22,.18)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.ellipse(0, 8, 26, 14, -0.2, 0, Math.PI*2);
-      ctx.fill(); ctx.stroke();
-
-      ctx.globalAlpha = 0.16;
-      ctx.fillStyle = '#0b2b16';
-      for(let i=0;i<5;i++){
-        ctx.beginPath();
-        ctx.ellipse(rand(-12,12), rand(3,14), rand(3,6), rand(1.2,3.0), rand(-0.6,0.6), 0, Math.PI*2);
-        ctx.fill();
-      }
-      ctx.restore();
-      ctx.globalAlpha = 1;
-      return;
-    }
-
-    if (e.type === 'water'){
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.scale(scale, scale);
-
-      ctx.fillStyle = '#42a5f5';
-      ctx.strokeStyle = 'rgba(11,43,22,.18)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-30, 2);
-      ctx.quadraticCurveTo(-14, -14, 8, -10);
-      ctx.quadraticCurveTo(26, -6, 32, 10);
-      ctx.quadraticCurveTo(8, 22, -18, 18);
-      ctx.quadraticCurveTo(-30, 14, -30, 2);
-      ctx.closePath();
-      ctx.fill(); ctx.stroke();
-
-      ctx.globalAlpha = 0.25;
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(-10, 4, 10, 0.2, 2.6);
-      ctx.stroke();
-      ctx.restore();
-      ctx.globalAlpha = 1;
-      return;
-    }
-
-    if (e.type === 'bush'){
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.scale(scale, scale);
-
-      ctx.fillStyle = '#1f7a3a';
-      ctx.strokeStyle = 'rgba(11,43,22,.22)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.ellipse(-12, 10, 14, 10, 0, 0, Math.PI*2);
-      ctx.ellipse(  0,  6, 18, 13, 0, 0, Math.PI*2);
-      ctx.ellipse( 14, 11, 13, 9, 0, 0, Math.PI*2);
-      ctx.fill(); ctx.stroke();
-
-      ctx.globalAlpha = 0.14;
-      ctx.fillStyle = '#0b2b16';
-      ctx.beginPath();
-      ctx.ellipse(2, 6, 10, 7, 0.2, 0, Math.PI*2);
-      ctx.fill();
-      ctx.restore();
-      ctx.globalAlpha = 1;
-      return;
-    }
-
-    function rr(x,y,w,h,r){
-      ctx.beginPath();
-      ctx.moveTo(x+r, y);
-      ctx.arcTo(x+w, y, x+w, y+h, r);
-      ctx.arcTo(x+w, y+h, x, y+h, r);
-      ctx.arcTo(x, y+h, x, y, r);
-      ctx.arcTo(x, y, x+w, y, r);
-      ctx.closePath();
-    }
-  }
-
-  function drawSwingScene(){
-    // nicer tee box scene
-    drawSky(dist);
-
-    // ground
-    ctx.fillStyle = '#cfeeda';
-    ctx.fillRect(0, H*0.36, W, H*0.64);
-    ctx.fillStyle = '#39aa57';
-    ctx.fillRect(0, H*0.50, W, H*0.50);
-
-    // tee pad
-    ctx.fillStyle = '#58c972';
-    ctx.strokeStyle = 'rgba(11,43,22,.14)';
-    ctx.lineWidth = 2;
-    rr(W*0.14, H*0.72, W*0.72, H*0.16, 18);
-    ctx.fill(); ctx.stroke();
-
-    // crowd (colored, not black)
-    const crowdY = H*0.60;
-    const wave = Math.sin(performance.now()/380)*2.0;
-    for(let i=0;i<12;i++){
-      const cx = W*0.08 + i*(W*0.07);
-      const hue = 140 + (i%5)*10;
-      ctx.globalAlpha = 0.70;
-      ctx.fillStyle = `hsl(${hue} 28% 24%)`;
-      ctx.beginPath(); ctx.ellipse(cx, crowdY + wave, 10, 8, 0, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(cx, crowdY + 18 + wave, 8, 12, 0.15, 0, Math.PI*2); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-
-    // golfer (simple flat character with accent)
-    const gx = W*0.50, gy = H*0.76;
+    // tiny shine
     ctx.save();
-    ctx.translate(gx, gy);
+    ctx.globalAlpha*=0.55;
+    ctx.strokeStyle='rgba(255,255,255,.65)';
+    ctx.lineWidth=3*dpr;
+    ctx.beginPath(); ctx.arc(-r*0.18,-r*0.20,r*0.46,-0.15*Math.PI,0.55*Math.PI); ctx.stroke();
+    ctx.restore();
+  }
+  else if(e.type==='super_hongbao'){
+    const r=e.r;
+    shadowCircle(r*0.62,0.20);
 
-    const t = clamp(swingT / 2.0, 0, 1);
-    const ease = t<0.5 ? (t*t*2) : (1 - (1-t)*(1-t)*2);
-    const angle = lerp(-1.35, 0.72, ease);
+    const g1=ctx.createLinearGradient(0,-r,0,r);
+    g1.addColorStop(0,'rgba(255,140,140,.98)');
+    g1.addColorStop(1,'rgba(210,25,25,.98)');
+    ctx.fillStyle=g1;
+    roundRect(ctx, -r*0.70, -r*0.78, r*1.40, r*1.55, r*0.28);
+    ctx.fill();
 
-    // legs
-    ctx.fillStyle = '#0b2b16';
-    ctx.globalAlpha = 0.92;
-    ctx.beginPath(); ctx.ellipse(-10, 44, 10, 18, 0.20, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse( 10, 44, 10, 18, -0.20, 0, Math.PI*2); ctx.fill();
-    // body (shirt)
-    ctx.fillStyle = '#ffffff';
-    ctx.globalAlpha = 0.95;
-    ctx.beginPath(); ctx.ellipse(0, 20, 14, 22, 0, 0, Math.PI*2); ctx.fill();
-    // head
-    ctx.fillStyle = '#f2d1b2';
-    ctx.globalAlpha = 0.95;
-    ctx.beginPath(); ctx.ellipse(0, 2, 10, 10, 0, 0, Math.PI*2); ctx.fill();
-    // cap
-    ctx.fillStyle = '#1f7a3a';
-    ctx.globalAlpha = 0.95;
-    ctx.beginPath(); ctx.ellipse(-2, -2, 10, 6, 0, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(10, 0, 8, 3, 0.2, 0, Math.PI*2); ctx.fill();
-
-    // club
-    ctx.globalAlpha = 0.88;
-    ctx.strokeStyle = 'rgba(11,43,22,.80)';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(0, 22);
-    ctx.lineTo(Math.cos(angle)*60, Math.sin(angle)*60);
+    ctx.lineWidth=5*dpr;
+    ctx.strokeStyle='rgba(255,255,255,.55)';
     ctx.stroke();
-    ctx.globalAlpha = 1;
 
+    // big seal
+    const g2=ctx.createRadialGradient(-r*0.14,-r*0.10,r*0.10,0,0,r*0.44);
+    g2.addColorStop(0,'rgba(255,255,255,.98)');
+    g2.addColorStop(1,'rgba(247,211,122,.98)');
+    ctx.fillStyle=g2;
+    ctx.beginPath(); ctx.arc(0,0,r*0.34,0,Math.PI*2); ctx.fill();
+
+    sparkle();
+
+    // ribbon
+    ctx.save();
+    ctx.globalAlpha*=0.55;
+    ctx.strokeStyle="rgba(255,255,255,.85)";
+    ctx.lineWidth=4*dpr;
+    ctx.beginPath(); ctx.arc(0,0,r*0.96, -0.25*Math.PI, 0.85*Math.PI); ctx.stroke();
+    ctx.restore();
+  }
+  else if(e.type==='yuanbao'){
+    const r=e.r;
+    shadowCircle(r*0.62,0.18);
+
+    // base
+    const g1=ctx.createRadialGradient(-r*0.25,-r*0.30,r*0.18,0,0,r*1.05);
+    g1.addColorStop(0,'rgba(255,245,200,.98)');
+    g1.addColorStop(1,'rgba(240,175,65,.98)');
+    ctx.fillStyle=g1;
+    ctx.beginPath();
+    ctx.ellipse(0,r*0.08,r*0.78,r*0.52,0,0,Math.PI*2);
+    ctx.fill();
+
+    // top bowl
+    const g2=ctx.createLinearGradient(0,-r*0.4,0,r*0.3);
+    g2.addColorStop(0,'rgba(255,235,170,.98)');
+    g2.addColorStop(1,'rgba(220,145,35,.98)');
+    ctx.fillStyle=g2;
+    ctx.beginPath();
+    ctx.ellipse(0,-r*0.10,r*0.58,r*0.36,0,0,Math.PI*2);
+    ctx.fill();
+
+    // hole
+    ctx.fillStyle='rgba(120,70,20,.55)';
+    ctx.beginPath(); ctx.ellipse(0,-r*0.10,r*0.22,r*0.12,0,0,Math.PI*2); ctx.fill();
+
+    // shine
+    ctx.save();
+    ctx.globalAlpha*=0.55;
+    ctx.fillStyle='rgba(255,255,255,.65)';
+    ctx.beginPath(); ctx.ellipse(-r*0.30,-r*0.18,r*0.18,r*0.10,-0.6,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  else if(e.type==='lantern'){
+    const r=e.r;
+    shadowCircle(r*0.58,0.16);
+
+    // lantern body
+    const g1=ctx.createLinearGradient(0,-r,0,r);
+    g1.addColorStop(0,'rgba(255,120,120,.98)');
+    g1.addColorStop(1,'rgba(200,30,30,.98)');
+    ctx.fillStyle=g1;
+    ctx.beginPath();
+    ctx.ellipse(0,0,r*0.62,r*0.78,0,0,Math.PI*2);
+    ctx.fill();
+
+    // ribs
+    ctx.save();
+    ctx.globalAlpha*=0.35;
+    ctx.strokeStyle='rgba(255,220,160,.55)';
+    ctx.lineWidth=4*dpr;
+    for(let i=-2;i<=2;i++){
+      ctx.beginPath();
+      ctx.ellipse(i*r*0.12,0,r*0.52,r*0.70,0,0,Math.PI*2);
+      ctx.stroke();
+    }
     ctx.restore();
 
-    // ball launch
-    const launch = clamp((swingT-1.05)/0.6, 0, 1);
-    const bx = W*0.52 + launch*(W*0.10);
-    const by = H*0.84 - launch*(H*0.22);
+    // top cap
+    ctx.fillStyle='rgba(247,211,122,.95)';
+    roundRect(ctx, -r*0.40, -r*0.92, r*0.80, r*0.22, r*0.10); ctx.fill();
+    // bottom cap
+    roundRect(ctx, -r*0.36, r*0.72, r*0.72, r*0.18, r*0.10); ctx.fill();
 
-    const bg = ctx.createRadialGradient(bx-5, by-6, 2, bx, by, 14);
-    bg.addColorStop(0,'#fff'); bg.addColorStop(0.6,'#eef2f5'); bg.addColorStop(1,'#cbd3da');
-    ctx.fillStyle = bg;
-    ctx.beginPath(); ctx.arc(bx, by, 10, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle = 'rgba(11,43,22,.12)';
-    ctx.lineWidth = 2;
+    // tassel balls
+    ctx.save();
+    ctx.translate(0, r*0.98);
+    ctx.fillStyle='rgba(247,211,122,.95)';
+    for(let k=-1;k<=1;k++){
+      ctx.beginPath(); ctx.arc(k*r*0.16, k==0?0:r*0.10, r*0.10, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+  else if(e.type==='lion'){
+    const r=e.r;
+    shadowCircle(r*0.60,0.16);
+
+    // mane
+    const g1=ctx.createRadialGradient(-r*0.25,-r*0.3,r*0.2,0,0,r*1.1);
+    g1.addColorStop(0,'rgba(255,240,200,.98)');
+    g1.addColorStop(1,'rgba(240,160,60,.98)');
+    ctx.fillStyle=g1;
+    ctx.beginPath(); ctx.arc(0,0,r*0.78,0,Math.PI*2); ctx.fill();
+
+    // face
+    ctx.fillStyle='rgba(255,225,175,.98)';
+    ctx.beginPath(); ctx.arc(0,0,r*0.60,0,Math.PI*2); ctx.fill();
+
+    // eyes
+    ctx.fillStyle='rgba(0,0,0,.75)';
+    ctx.beginPath(); ctx.arc(-r*0.20,-r*0.10,r*0.10,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(r*0.20,-r*0.10,r*0.10,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.95)';
+    ctx.beginPath(); ctx.arc(-r*0.17,-r*0.13,r*0.04,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(r*0.17,-r*0.13,r*0.04,0,Math.PI*2); ctx.fill();
+
+    // nose
+    ctx.fillStyle='rgba(210,80,80,.92)';
+    ctx.beginPath(); ctx.ellipse(0,r*0.10,r*0.12,r*0.10,0,0,Math.PI*2); ctx.fill();
+
+    // smile
+    ctx.strokeStyle='rgba(140,70,40,.65)';
+    ctx.lineWidth=5*dpr;
+    ctx.lineCap='round';
+    ctx.beginPath(); ctx.arc(0,r*0.18,r*0.22,0.05*Math.PI,0.95*Math.PI); ctx.stroke();
+
+    // confetti dots
+    ctx.save();
+    ctx.globalAlpha*=0.35;
+    ctx.fillStyle='rgba(255,77,77,.95)';
+    ctx.beginPath(); ctx.arc(-r*0.55,-r*0.18,r*0.10,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(247,211,122,.95)';
+    ctx.beginPath(); ctx.arc(r*0.56,-r*0.06,r*0.10,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  else if(e.type==='bomb'){
+    const r=e.r;
+    shadowCircle(r*0.62,0.20);
+
+    // body
+    const g1=ctx.createRadialGradient(-r*0.22,-r*0.28,r*0.15,0,0,r*1.0);
+    g1.addColorStop(0,'rgba(90,90,95,.98)');
+    g1.addColorStop(1,'rgba(20,20,25,.98)');
+    ctx.fillStyle=g1;
+    ctx.beginPath(); ctx.arc(0,0,r*0.74,0,Math.PI*2); ctx.fill();
+
+    // highlight
+    ctx.save();
+    ctx.globalAlpha*=0.55;
+    ctx.fillStyle='rgba(255,255,255,.20)';
+    ctx.beginPath(); ctx.ellipse(-r*0.22,-r*0.25,r*0.22,r*0.14,-0.6,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // fuse
+    ctx.strokeStyle='rgba(255,220,160,.85)';
+    ctx.lineWidth=6*dpr;
+    ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(r*0.30,-r*0.58);
+    ctx.quadraticCurveTo(r*0.65,-r*0.78,r*0.40,-r*0.96);
     ctx.stroke();
 
-    // text
-    ctx.fillStyle = 'rgba(11,43,22,.65)';
-    ctx.font = '800 13px ui-sans-serif, system-ui';
-    ctx.fillText('開球中…', 14, 22);
+    // spark
+    const sp= (Math.sin(t*18)+1)/2;
+    ctx.save();
+    ctx.globalAlpha*= (0.45+sp*0.45);
+    ctx.fillStyle='rgba(255,120,120,.95)';
+    ctx.beginPath(); ctx.arc(r*0.42,-r*0.98,r*0.12,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.95)';
+    ctx.beginPath(); ctx.arc(r*0.46,-r*1.02,r*0.06,0,Math.PI*2); ctx.fill();
+    ctx.restore();
 
-    function rr(x,y,w,h,r){
-      ctx.beginPath();
-      ctx.moveTo(x+r, y);
-      ctx.arcTo(x+w, y, x+w, y+h, r);
-      ctx.arcTo(x+w, y+h, x, y+h, r);
-      ctx.arcTo(x, y+h, x, y, r);
-      ctx.arcTo(x, y, x+w, y, r);
-      ctx.closePath();
-    }
+    // tiny face 😈
+    ctx.fillStyle='rgba(255,255,255,.20)';
+    ctx.beginPath(); ctx.arc(-r*0.18,-r*0.08,r*0.08,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(r*0.18,-r*0.08,r*0.08,0,Math.PI*2); ctx.fill();
   }
 
-  // spawning
-  function spawn(){
-    const z = CFG.viewDist - rand(4, 10);
-    const xPos = rand(-0.95, 0.95);
-    const r = Math.random();
-    if (r < 0.42) entities.push({type:'gift', z, x:xPos, w: rand(0.6, 1.4)});
-    else if (r < 0.48) entities.push({type:'flag', z, x:xPos});
-    else if (r < 0.70) entities.push({type:'sand', z, x:xPos});
-    else if (r < 0.88) entities.push({type:'bush', z, x:xPos});
-    else entities.push({type:'water', z, x:xPos});
+  ctx.restore();
+}
+
+function drawSparks(t){
+  const g = 980 * dpr;
+  for(const s of sparks){
+    const age = t - s.t;
+    const a = clamp(1 - age/s.life, 0, 1);
+    if(a<=0) continue;
+    const tt = age;
+    const x = s.x + s.vx*tt*0.001;
+    const y = s.y + s.vy*tt*0.001 + 0.5*g*(tt*tt)*0.000001;
+
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.fillStyle = s.kind==='bad' ? 'rgba(255,77,77,1)' :
+                    s.kind==='super' ? 'rgba(255,255,255,1)' :
+                    'rgba(247,211,122,1)';
+    ctx.beginPath();
+    ctx.arc(x,y, (s.kind==='super'?2.6:2.0)*dpr, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
   }
+  sparks = sparks.filter(s => (t - s.t) < s.life);
+}
 
-  function applyGift(now){
-    if (now - lastGiftTime <= CFG.comboWindow) combo = Math.min(CFG.comboMax, combo+1);
-    else combo = 1;
-    bestCombo = Math.max(bestCombo, combo);
-    lastGiftTime = now;
+function drawPopups(t){
+  for(const p of popups){
+    const age=t-p.t;
+    const a=clamp(1-age/p.life,0,1);
+    const y=p.y - age*68*dpr;
+    const bump = Math.sin(age*10)*2*dpr*(p.kind==='perfect'?1.0:0.6);
+
+    ctx.save();
+    ctx.globalAlpha=a;
+
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+
+    let fontSize = 20*dpr;
+    let weight = 800;
+    if(p.kind==='perfect') { fontSize = 30*dpr; weight = 950; }
+    if(p.kind==='super')   { fontSize = 32*dpr; weight = 950; }
+    if(p.kind==='bad')     { fontSize = 22*dpr; weight = 900; }
+
+    ctx.font=`${weight} ${Math.round(fontSize)}px ui-sans-serif, system-ui`;
+
+    const color = p.kind==='super' ? 'rgba(255,255,255,1)' :
+                  p.kind==='perfect' ? 'rgba(255,220,160,1)' :
+                  p.kind==='good' ? 'rgba(247,211,122,1)' :
+                  p.kind==='bad' ? 'rgba(255,77,77,1)' :
+                  'rgba(200,200,200,1)';
+
+    // shadow/outline layer
+    ctx.lineWidth = (p.kind==='perfect' || p.kind==='super') ? 6*dpr : 4*dpr;
+    ctx.strokeStyle = 'rgba(0,0,0,.55)';
+    ctx.strokeText(p.text, p.x, y + bump);
+
+    // glow
+    if(p.kind==='perfect' || p.kind==='super'){
+      ctx.shadowBlur = 18*dpr;
+      ctx.shadowColor = p.kind==='super' ? 'rgba(255,255,255,.55)' : 'rgba(247,211,122,.45)';
+    }
+
+    ctx.fillStyle=color;
+    ctx.fillText(p.text,p.x,y + bump);
+    ctx.restore();
   }
+  popups=popups.filter(p => (t-p.t) < p.life);
+}
 
-  // collisions
-  function hitTest(e){
-    if (e.z > CFG.collideZ) return false;
-    const base = 0.12;
-    const th = (e.type==='gift' || e.type==='flag') ? base : (e.type==='sand' ? 0.18 : (e.type==='water' ? 0.20 : 0.17));
-    return Math.abs(x - e.x) <= th;
-  }
+/* =========================
+   Loop
+========================= */
+let lastT=now();
+function tick(){
+  const t=now();
+  const dt=Math.min(0.033,t-lastT);
+  lastT=t;
 
-  function onHitObstacle(type){
-    score = Math.max(0, score - CFG.scoreHitPenalty);
-    if (type === 'sand'){
-      slowMul = Math.min(slowMul, CFG.sandSlowMul);
-      slowT = Math.max(slowT, CFG.sandSlowTime);
-    }else if (type === 'water'){
-      slowMul = Math.min(slowMul, CFG.waterSlowMul);
-      slowT = Math.max(slowT, CFG.waterSlowTime);
-      combo = 1;
-    }else if (type === 'bush'){
-      vxLat += (Math.random()<0.5?-1:1) * CFG.bushPush;
-      combo = 1;
-    }
-  }
-
-  // loop
-  let lastTs=0;
-  let entitiesVisible = [];
-
-  function drawFrame(){
-    drawSky(dist);
-    drawCourse(dist);
-
-    // speed streaks add punch
-    drawSpeedStreaks();
-
-    entitiesVisible = entities.filter(e => e.z <= CFG.viewDist+5 && e.z >= -6);
-    entitiesVisible.sort((a,b)=>b.z - a.z);
-    for(const e of entitiesVisible){
-      if (e.z >= 0) drawEntity(e);
-    }
-
-    if (mode === 'run') drawBall();
-
-    // combo label
-    if (mode === 'run' && combo > 1){
-      ctx.save();
-      ctx.globalAlpha = 0.92;
-      ctx.fillStyle = 'rgba(11,43,22,.70)';
-      ctx.font = '900 12px ui-sans-serif, system-ui';
-      ctx.fillText(`Combo x${combo}`, 14, H-14);
-      ctx.restore();
-    }
-
-    // pause overlay
-    if (paused && running){
-      ctx.save();
-      ctx.globalAlpha = 0.35;
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0,0,W,H);
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = 'rgba(255,255,255,.95)';
-      ctx.font = '950 22px ui-sans-serif, system-ui';
-      ctx.fillText('暫停中', W/2 - 40, H/2 - 8);
-      ctx.fillStyle = 'rgba(255,255,255,.84)';
-      ctx.font = '14px ui-sans-serif, system-ui';
-      ctx.fillText('按「暫停」或空白鍵繼續', W/2 - 96, H/2 + 18);
-      ctx.restore();
-    }
-  }
-
-  function step(ts){
-    if (!running) return;
-    const dt = Math.min(0.033, (ts-lastTs)/1000 || 0);
-    lastTs = ts;
-
-    if (paused){
-      drawFrame();
-      requestAnimationFrame(step);
-      return;
-    }
-
-    if (mode === 'swing'){
-      swingT += dt;
-      drawSwingScene();
-      if (swingT >= 2.0){
-        mode = 'run';
-        dist = 0; tLeft = CFG.duration; score = 0;
-        combo = 1; bestCombo = 1; lastGiftTime = -999;
-        entities = []; spawnTimer = 0;
-        x = 0; vxLat = 0;
-      }
-      requestAnimationFrame(step);
-      return;
-    }
-
-    // run
-    tLeft -= dt;
-    if (tLeft <= 0){
-      tLeft = 0;
-      updateUI();
-      drawFrame();
-      endGame();
-      return;
-    }
-
-    // speed curve
-    const t = clamp((CFG.duration - tLeft)/CFG.accelTime, 0, 1);
-    const ease = 1 - Math.pow(1-t, 2.2);
-    const baseV = lerp(CFG.v0, CFG.vMax, ease);
-
-    // slow effects
-    if (slowT > 0){
-      slowT -= dt;
-      if (slowT <= 0){ slowT = 0; slowMul = 1; }
-    }else{
-      slowMul = lerp(slowMul, 1, dt*3.2);
-    }
-    v = baseV * slowMul;
-
-    // forward & score
-    dist += v * dt;
-    score += (v * dt) * CFG.scorePerMeter;
-
-    // combo decay
-    const now = ts/1000;
-    if (now - lastGiftTime > CFG.comboWindow) combo = 1;
-
-    // lateral physics (sensitive)
-    const axReturn = dragging ? 0 : (-x * CFG.returnForce);
-    vxLat += axReturn * dt;
-    vxLat *= Math.exp(-CFG.lateralDamp * dt);
-    x += vxLat * dt;
-    x = clamp(x, -CFG.lateralMax, CFG.lateralMax);
+  if(state===STATE.PLAY){
+    const elapsed=t-tStart;
+    tLeft=Math.max(0, CONFIG.durationSec - elapsed);
 
     // spawn
-    spawnTimer -= dt;
-    if (spawnTimer <= 0){
-      spawn();
-      spawnTimer = CFG.spawnEvery + rand(-CFG.spawnJitter, CFG.spawnJitter);
+    if(t>=nextSpawnAt && entities.length < maxAlive(elapsed)){
+      spawnEntity(elapsed);
+      scheduleSpawn(elapsed);
     }
 
-    // move entities
-    for(const e of entities) e.z -= v * dt;
+    // update entities
+    for(const e of entities){
+      e.x += e.vx*dt;
+      e.y += e.vy*dt;
 
-    // collisions & cleanup
-    for(let i=entities.length-1;i>=0;i--){
-      const e = entities[i];
-      if (e.z < -6){ entities.splice(i,1); continue; }
-      if (hitTest(e)){
-        if (e.type === 'gift'){
-          entities.splice(i,1);
-          applyGift(now);
-          score += CFG.giftScore * combo;
-        }else if (e.type === 'flag'){
-          entities.splice(i,1);
-          applyGift(now);
-          score += CFG.flagScore * Math.max(1, Math.floor(combo/2)+1);
-        }else{
-          entities.splice(i,1);
-          onHitObstacle(e.type);
-        }
-      }
+      // bounce walls gently
+      if(e.x < 60*dpr || e.x > W-60*dpr) e.vx *= -1;
+      if(e.y < 120*dpr || e.y > H-140*dpr) e.vy *= -1;
     }
 
-    updateUI();
-    drawFrame();
-    requestAnimationFrame(step);
+    // expire
+    const tt = now();
+    entities = entities.filter(e => (tt - e.t) < e.ttl);
+
+    if(tLeft<=0) endGame();
   }
 
-  // control
-  function resetAll(){
-    running=false; paused=false;
-    tLeft=CFG.duration; score=0; dist=0; v=CFG.v0;
-    slowMul=1; slowT=0;
-    x=0; vxLat=0;
-    entities=[]; spawnTimer=0;
-    combo=1; bestCombo=1; lastGiftTime=-999;
-    mode='start'; swingT=0;
-    updateUI();
-    drawSky(0); drawCourse(0);
+  screenShake=Math.max(0, screenShake - dt*18);
+
+  // render
+  ctx.save();
+  if(screenShake>0){
+    const s=screenShake*dpr;
+    ctx.translate(rand(-s,s), rand(-s,s));
+  }
+  drawBackground(t);
+  for(const e of entities) drawEntity(e,t);
+  drawSparks(t);
+  drawPopups(t);
+  ctx.restore();
+
+  if(state===STATE.PLAY){
+    timeV.textContent=fmt1(tLeft);
+    scoreV.textContent=fmtInt(score);
+    comboV.textContent="x"+multiplier();
+    hint.style.opacity = (t - tStart < 7) ? "1" : "0";
   }
 
-  function startGame(){
-    startOverlay.style.display = 'none';
-    endOverlay.style.display = 'none';
-    running = true;
-    paused = false;
-    mode = 'swing';
-    swingT = 0;
-    lastTs = performance.now();
-    requestAnimationFrame(step);
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* =========================
+   Share Card (PNG)
+========================= */
+function renderShareCardPNG(){
+  const w = 1080, h = 1350;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+
+  // Background
+  const bg = g.createRadialGradient(w*0.5,h*0.18,0,w*0.5,h*0.18,w*0.95);
+  bg.addColorStop(0,'#4a1717');
+  bg.addColorStop(0.55,'#140909');
+  bg.addColorStop(1,'#070404');
+  g.fillStyle = bg; g.fillRect(0,0,w,h);
+
+  // Confetti
+  for(let i=0;i<130;i++){
+    const x= Math.random()*w, y=Math.random()*h*0.75;
+    const r= 2+Math.random()*5;
+    const a= Math.random()*Math.PI*2;
+    g.save();
+    g.translate(x,y);
+    g.rotate(a);
+    g.globalAlpha=0.18+Math.random()*0.20;
+    g.fillStyle = (Math.random()<0.5) ? '#f7d37a' : '#ff6b6b';
+    g.fillRect(-r*2,-r,r*4,r*2.2);
+    g.restore();
   }
 
-  function endGame(){
-    running = false;
-    paused = false;
-    mode = 'end';
-    endScore.textContent = String(Math.max(0, Math.floor(score)));
-    endDist.textContent = String(Math.floor(dist));
-    endOverlay.style.display = 'flex';
-  }
+  // Header
+  g.fillStyle = 'rgba(255,255,255,.95)';
+  g.font = '950 70px ui-sans-serif, system-ui';
+  g.fillText('搶紅包快閃', 84, 150);
+  g.fillStyle = 'rgba(255,255,255,.75)';
+  g.font = '700 32px ui-sans-serif, system-ui';
+  g.fillText('新年互動賀卡｜60 秒衝榜', 84, 205);
 
-  function togglePause(){
-    if (!running || mode !== 'run') return;
-    paused = !paused;
-    updateUI();
-  }
+  // Social sticker
+  roundRect(g, w-330, 110, 246, 72, 26);
+  g.fillStyle='rgba(0,0,0,.38)'; g.fill();
+  g.lineWidth=3; g.strokeStyle='rgba(255,255,255,.14)'; g.stroke();
+  g.fillStyle='rgba(255,255,255,.85)';
+  g.font='800 28px ui-sans-serif, system-ui';
+  g.fillText('貼到LINE群', w-310, 156);
 
-  // share
-  async function shareScore(){
-    const name = (inpName.value || '我').trim();
-    const bless = (inpBless.value || '').trim();
-    const s = Math.max(0, Math.floor(score));
-    const d = Math.floor(dist);
+  // Score panel
+  const px=84, py=270, pw=w-168, ph=620;
+  roundRect(g, px,py,pw,ph,42);
+  const pg = g.createLinearGradient(0,py,0,py+ph);
+  pg.addColorStop(0,'rgba(255,255,255,.10)');
+  pg.addColorStop(1,'rgba(0,0,0,.40)');
+  g.fillStyle=pg; g.fill();
+  g.lineWidth=3; g.strokeStyle='rgba(255,255,255,.16)'; g.stroke();
 
-    const msg =
-`⛳ 馬年球道衝刺（60s）
-${name}：${s} 分｜${d} m
-祝福：${bless}
-— 弘騏興業有限公司`;
+  g.fillStyle='rgba(255,255,255,.65)';
+  g.font='800 30px ui-sans-serif, system-ui';
+  g.fillText('本次分數', px+54, py+96);
 
-    try{
-      await navigator.clipboard.writeText(msg);
-      showToast('已複製分享文字 ✅');
-    }catch(err){
-      window.prompt('複製這段文字分享：', msg);
-    }
-  }
+  g.fillStyle='#ffdca0';
+  g.font='1000 150px ui-sans-serif, system-ui';
+  g.fillText(fmtInt(score), px+54, py+260);
 
-  // UI bind
-  btnStart.addEventListener('click', startGame);
-  btnRestart.addEventListener('click', startGame);
-  btnPause.addEventListener('click', togglePause);
-  btnReset.addEventListener('click', ()=>{
-    resetAll();
-    startOverlay.style.display = 'flex';
-    endOverlay.style.display = 'none';
-  });
-  btnHow.addEventListener('click', ()=>showToast('提示：拖曳=推球｜鬆手回正｜障礙不結束但會降速/扣分'));
-  btnShare.addEventListener('click', ()=>{
-    const bless = (inpBless.value || '').trim();
-    if (!bless){ showToast('祝福語必填 🙏'); inpBless.focus(); return; }
-    shareScore();
-  });
+  // Badges
+  const bx=px+54, by=py+320;
+  badgePill(g, bx, by, `最高倍率  x${maxMult}`);
+  badgePill(g, bx, by+76, `Perfect ${perfectHits}｜Miss ${missHits}`);
+  badgePill(g, bx, by+152, `加分 ${goodHits}  /  扣分 ${badHits}`);
 
-  inpBless.addEventListener('input', ()=>{
-    if (inpBless.value.length > 18) inpBless.value = inpBless.value.slice(0,18);
-  });
-  inpName.addEventListener('input', ()=>{
-    if (inpName.value.length > 8) inpName.value = inpName.value.slice(0,8);
-  });
+  // CTA
+  g.fillStyle='rgba(255,255,255,.70)';
+  g.font='800 34px ui-sans-serif, system-ui';
+  g.fillText('你搶到幾分？來挑戰我！', px+54, py+560);
 
-  // boot
-  setTimeout(()=>{ resize(); resetAll(); }, 0);
-})();
+  // Footer
+  g.fillStyle='rgba(255,255,255,.92)';
+  g.font='900 44px ui-sans-serif, system-ui';
+  g.fillText(CONFIG.companyName, 84, 990);
+
+  g.fillStyle='rgba(255,255,255,.72)';
+  g.font='750 36px ui-sans-serif, system-ui';
+  g.fillText(CONFIG.blessing, 84, 1052);
+
+  g.fillStyle='rgba(255,255,255,.55)';
+  g.font='650 28px ui-sans-serif, system-ui';
+  g.fillText('（提示：點到年獸/炸彈會扣分，空點太多也會扣分）', 84, 1116);
+
+  const blob = dataURLToBlob(c.toDataURL('image/png'));
+  return URL.createObjectURL(blob);
+}x ui-sans-serif, system-ui';
+  g.fillText(CONFIG.blessing, 84, 1038);
+
+  g.fillStyle='rgba(255,255,255,.55)';
+  g.font='600 28px ui-sans-serif, system-ui';
+  g.fillText('把成績貼到 LINE 群組，來比高分！', 84, 1108);
+
+  const blob = dataURLToBlob(c.toDataURL('image/png'));
+  return URL.createObjectURL(blob);
+}
+function roundRect(g,x,y,w,h,r){
+  g.beginPath();
+  g.moveTo(x+r,y);
+  g.arcTo(x+w,y,x+w,y+h,r);
+  g.arcTo(x+w,y+h,x,y+h,r);
+  g.arcTo(x,y+h,x,y,r);
+  g.arcTo(x,y,x+w,y,r);
+  g.closePath();
+}
+function dataURLToBlob(dataURL){
+  const [head,body]=dataURL.split(',');
+  const mime=head.match(/:(.*?);/)[1];
+  const bin=atob(body);
+  const arr=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+  return new Blob([arr],{type:mime});
+}
+
+/* =========================
+   Init
+========================= */
+function boot(){
+  timeV.textContent=fmt1(CONFIG.durationSec);
+  scoreV.textContent="0";
+  comboV.textContent="x1";
+  soundLbl.textContent=audioOn?"音效：開":"音效：關";
+  startOverlay.classList.remove('hide');
+  endOverlay.classList.add('hide');
+  updateComboUI();
+}
+boot();
 </script>
 </body>
 </html>
