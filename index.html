@@ -157,6 +157,29 @@
 .submitState.bad{color:rgba(255,120,120,.85)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 
+
+/* Leaderboard */
+.lbHeader{margin-bottom:12px}
+.lbTitle{font-size:18px;font-weight:800;letter-spacing:.5px}
+.lbSub{font-size:12px;color:rgba(255,255,255,.65);margin-top:6px}
+.lbPanel{margin-top:10px;border:1px solid rgba(255,255,255,.10);border-radius:14px;overflow:hidden;background:rgba(0,0,0,.20)}
+.lbHeadRow{display:grid;grid-template-columns:48px 1.1fr 110px 2fr;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08);font-size:12px;color:rgba(255,255,255,.65);background:rgba(255,255,255,.03)}
+.lbList{max-height:340px;overflow:auto}
+.lbRow{display:grid;grid-template-columns:48px 1.1fr 110px 2fr;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.06);align-items:center}
+.lbRow:last-child{border-bottom:none}
+.lbRow .rank{color:rgba(255,255,255,.65);font-variant-numeric:tabular-nums}
+.lbRow .name{font-weight:700}
+.lbRow .score{font-variant-numeric:tabular-nums;font-weight:800}
+.lbRow .msg{color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lbRow.me{background:linear-gradient(90deg, rgba(247,211,122,.16), rgba(255,120,120,.06))}
+.lbFooter{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:10px}
+.brandLine{color:rgba(255,255,255,.65);font-size:12px}
+.lbActions{display:flex;gap:10px}
+@media (max-width:720px){
+  .lbHeadRow,.lbRow{grid-template-columns:38px 1fr 90px 1.4fr}
+  .lbList{max-height:46vh}
+}
+
 </style>
 </head>
 <body>
@@ -415,6 +438,72 @@ const hint=document.getElementById('hint');
 
 const startOverlay=document.getElementById('startOverlay');
 const endOverlay=document.getElementById('endOverlay');
+const leaderboardOverlay=document.getElementById('leaderboardOverlay');
+const lbList=document.getElementById('lbList');
+const lbBackBtn=document.getElementById('lbBackBtn');
+const lbAgainBtn=document.getElementById('lbAgainBtn');
+
+function showLeaderboard(){
+  if(!leaderboardOverlay) return;
+  endOverlay.classList.add('hide');
+  leaderboardOverlay.classList.remove('hide');
+  loadLeaderboard().catch(err=>{
+    console.error(err);
+    if(lbList) lbList.innerHTML = `<div style="padding:14px;color:rgba(255,255,255,.75);">排行榜載入失敗，請稍後再試。</div>`;
+  });
+}
+
+async function loadLeaderboard(){
+  if(!lbList) return;
+  lbList.innerHTML = `<div style="padding:14px;color:rgba(255,255,255,.65);">載入中…</div>`;
+
+  const snap = await db.collection('leaderboard_2026newyeargamecard')
+    .orderBy('score','desc')
+    .limit(100)
+    .get();
+
+  const rows = [];
+  snap.forEach(doc=>{
+    const d = doc.data()||{};
+    rows.push({
+      id: doc.id,
+      name: (d.name||'').toString(),
+      message: (d.message||'').toString(),
+      score: Number(d.score||0),
+      createdAt: d.createdAt && d.createdAt.toMillis ? d.createdAt.toMillis() : 0
+    });
+  });
+
+  rows.sort((a,b)=> (b.score - a.score) || (a.createdAt - b.createdAt) || (a.id>b.id?1:-1));
+
+  const meId = window.__lastDocId || '';
+  lbList.innerHTML = rows.map((r,i)=>{
+    const safeName = escapeHtml(r.name).slice(0,12) || '—';
+    const safeMsg = escapeHtml(r.message).slice(0,40) || '';
+    const cls = (r.id===meId) ? 'lbRow me' : 'lbRow';
+    return `<div class="${cls}">
+      <div class="rank">#${i+1}</div>
+      <div class="name" title="${safeName}">${safeName}</div>
+      <div class="score">${r.score}</div>
+      <div class="msg" title="${safeMsg}">${safeMsg}</div>
+    </div>`;
+  }).join('') || `<div style="padding:14px;color:rgba(255,255,255,.65);">目前還沒有榜單，快來搶第一！</div>`;
+}
+
+function escapeHtml(str){
+  return (str||'').replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+}
+
+if(lbBackBtn){
+  lbBackBtn.addEventListener('click', ()=>{
+    leaderboardOverlay.classList.add('hide');
+    endOverlay.classList.remove('hide');
+  });
+}
+if(lbAgainBtn){
+  lbAgainBtn.addEventListener('click', ()=>{ location.reload(); });
+}
+
 const howOverlay=document.getElementById('howOverlay');
 
 const startBtn=document.getElementById('startBtn');
@@ -479,15 +568,25 @@ function bindPhase2Refs(){
       }
       submitBtn.disabled = true;
       setSubmitState('', '送出中…');
+
       try{
-        const payload = { name, message, score: score, maxMult: maxMult, perfect: perfectHits, at: Date.now() };
-        localStorage.setItem('hongbao_last_submit', JSON.stringify(payload));
-        await new Promise(r=>setTimeout(r, 450));
+        const docRef = await db.collection('leaderboard_2026newyeargamecard').add({
+          name,
+          message,
+          score: Number(score||0),
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          game: '2026newyeargamecard',
+          v: 28
+        });
+
         submitted = true;
-        setSubmitState('ok','已送出（待接 Firebase 排行榜）');
+        setSubmitState('ok','已送出，正在載入排行榜…');
+
+        window.__lastDocId = docRef.id;
+        showLeaderboard();
       }catch(e){
         console.error(e);
-        setSubmitState('bad','送出失敗，請再試一次');
+        setSubmitState('bad','送出失敗，請稍後再試');
         submitBtn.disabled = false;
       }
     };
@@ -1583,5 +1682,53 @@ boot();
 
 });
 </script>
+
+<!-- Leaderboard Overlay (Top 100) -->
+<div class="overlay hide" id="leaderboardOverlay" style="pointer-events:auto;">
+  <div class="card big">
+    <div class="lbHeader">
+      <div class="lbTitle">弘騏興業有限公司 敬賀｜新年快樂</div>
+      <div class="lbSub">Top 100 搶紅包榜｜寫下祝福，一起傳遞好運</div>
+    </div>
+
+    <div class="lbPanel">
+      <div class="lbHeadRow">
+        <div class="cRank">#</div>
+        <div class="cName">名字</div>
+        <div class="cScore">分數</div>
+        <div class="cMsg">祝福語</div>
+      </div>
+      <div class="lbList" id="lbList"></div>
+    </div>
+
+    <div class="lbFooter">
+      <div class="brandLine">Balance & Peace</div>
+      <div class="lbActions">
+        <button class="btn" id="lbBackBtn">返回結算</button>
+        <button class="btn primary" id="lbAgainBtn">再玩一次</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Firebase (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script>
+  // Firebase init (Phase 3)
+  const firebaseConfig = {
+    apiKey: "AIzaSyB3nfruSXgRGrQmo9zQMAHddn7wHrQO8_w",
+    authDomain: "gamecard-1aaf6.firebaseapp.com",
+    projectId: "gamecard-1aaf6",
+    storageBucket: "gamecard-1aaf6.firebasestorage.app",
+    messagingSenderId: "934440165694",
+    appId: "1:934440165694:web:63763fe51b174400280c6f",
+    measurementId: "G-DV7D9TZDYP"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
+
 </body>
 </html>
