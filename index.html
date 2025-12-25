@@ -16,7 +16,7 @@
     *{box-sizing:border-box;font-family: ui-sans-serif, system-ui, -apple-system, "PingFang TC", "Noto Sans TC", "Segoe UI", sans-serif;}
     html,body{height:100%;margin:0;background:radial-gradient(1200px 900px at 50% 20%, #3a1414 0%, var(--bg1) 40%, var(--bg0) 100%);color:#fff;overflow:hidden}
     #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
-    canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;pointer-events:auto; touch-action:none;}
+    canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;pointer-events:auto;}
     .ui{position:absolute;inset:0;pointer-events:none;}
     .hud{position:absolute;top:calc(env(safe-area-inset-top, 0px) + 10px);left:14px;right:14px;display:flex;gap:10px;align-items:center;justify-content:space-between;}
     .pill{
@@ -168,7 +168,7 @@
       <div class="comboBarWrap"><div class="comboBar" id="comboBar"></div></div>
       <div class="badge" id="badge">搶紅包：連擊升倍率</div>
 
-      <div class="hint" id="hint">直接點畫面物件搶分：🧧/🪙/🏮/🦁 加分｜👹/💣 扣分斷連擊｜空點會扣分｜偶爾掉下 ✨超大紅包✨</div>
+      <div class="hint" id="hint">直接點畫面物件搶分：🧧/🪙/🏮 加分｜👹/💣 扣分斷連擊｜空點會扣分｜偶爾掉下 ✨超大紅包✨</div>
 <div class="toast" id="toast"></div>
 
       <div class="overlay" id="startOverlay">
@@ -186,7 +186,7 @@
 
           <div class="rules">
             <ul>
-              <li>加分：🧧紅包、🪙元寶、🏮燈籠、🦁舞獅（連擊升倍率）</li>
+              <li>加分：🧧紅包、🪙元寶、🏮燈籠（連擊升倍率）</li>
               <li>扣分：👹年獸、💣炸彈（扣分＋斷 Combo）</li>
               <li>連續空點：扣分（倍率不變）</li>
               <li>稀有：✨超大紅包✨ 出現很短，點到大加分！</li>
@@ -255,7 +255,7 @@
           <div class="rules" style="margin-top:12px">
             <ul>
               <li>直接點畫面上的物件（不用按按鈕）</li>
-              <li>🧧/🪙/🏮/🦁 加分並疊倍率</li>
+              <li>🧧/🪙/🏮 加分並疊倍率</li>
               <li>👹/💣 扣分並斷 Combo</li>
               <li><b>連續空點會扣分</b>（防亂點）</li>
               <li>✨超大紅包✨ 出現很短，點到大加分＋特效</li>
@@ -523,7 +523,6 @@ function addPopup(x,y,text,kind){
 ========================= */
 const STATE={START:'start',PLAY:'play',END:'end'};
 let state=STATE.START;
-showOverlay();
 
 let tStart=0;
 let tLeft=CONFIG.durationSec;
@@ -1070,7 +1069,7 @@ function drawEntity(e, t){
     g1.addColorStop(1,'rgba(215,135,30,.98)');
     ctx.fillStyle=g1;
     ctx.beginPath();
-    ctx.roundRect(-r*0.78,-r*0.36,r*1.56,r*0.72,r*0.30);
+    roundRect(ctx, -r*0.78,-r*0.36,r*1.56,r*0.72,r*0.30);
     ctx.fill();
 
     // rim
