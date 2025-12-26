@@ -525,6 +525,12 @@ let submitted=false;
 function sanitizeText(str){
   return (str||"").replace(/[<>]/g,"").replace(/\s+/g," ").trim();
 }
+function nameKeyFrom(name){
+  // deterministic doc id to avoid duplicate names on leaderboard
+  const n = sanitizeText(name).toLowerCase();
+  const key = n.replace(/\s+/g,'-').replace(/[^a-z0-9\u4e00-\u9fff\-]/g,'');
+  return key.slice(0,24) || 'anon';
+}
 function validatePhase2(){
   const name = sanitizeText(nameInput?.value);
   if(submitBtn){
@@ -570,19 +576,22 @@ function bindPhase2Refs(){
       setSubmitState('', '送出中…');
 
       try{
-        const docRef = await db.collection('leaderboard_2026newyeargamecard').add({
+        const nameKey = nameKeyFrom(name);
+        const docRef = db.collection('leaderboard_2026newyeargamecard').doc(nameKey);
+        await docRef.set({
           name,
           message,
           score: Number(score||0),
           createdAt: firebase.firestore.FieldValue.serverTimestamp(),
           game: '2026newyeargamecard',
-          v: 28
-        });
+          v: 30,
+          nameKey
+        }, { merge: true });
 
         submitted = true;
         setSubmitState('ok','已送出，正在載入排行榜…');
 
-        window.__lastDocId = docRef.id;
+        window.__lastDocId = nameKey;
         showLeaderboard();
       }catch(e){
         console.error(e);
